@@ -1,4 +1,4 @@
-from matmojo.types.errors import ValueError
+from matmojo.types.errors import IndexError, ValueError
 
 
 struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
@@ -52,56 +52,21 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
     var size: Int
     """The total number of elements in the matrix."""
 
-    fn __init__(out self, data: List[List[Scalar[Self.dtype]]]) raises:
-        """Initializes the matrix from a nested list.
+    # ===--------------------------------------------------------------------===#
+    # Life Cycle Management
+    # ===--------------------------------------------------------------------===#
+
+    fn __init__(
+        out self,
+        data: List[List[Scalar[Self.dtype]]],
+        order: String = "C",
+    ) raises:
+        """Initializes the matrix with a nested list and memory layout order.
 
         Args:
             data: A nested list of elements to initialize the matrix.
-
-        Raises:
-            ValueError: If the list is not rectangular.
-        """
-        if len(data) == 0:
-            raise Error(
-                ValueError(
-                    file="src/matmojo/types/matrix.mojo",
-                    function=(
-                        "Matrix.__init__(out self, var data:"
-                        " List[List[Scalar[Self.dtype]]])"
-                    ),
-                    message="Data cannot be an empty list.",
-                    previous_error=None,
-                )
-            )
-        self.shape = (len(data), len(data[0]))
-        self.size = self.shape[0] * self.shape[1]
-        self.strides = (self.shape[1], 1)  # Row-major order
-        self.data = List[Scalar[Self.dtype]](capacity=self.size)
-        for row in data:
-            if len(row) != self.shape[1]:
-                raise Error(
-                    ValueError(
-                        file="src/matmojo/types/matrix.mojo",
-                        function=(
-                            "Matrix.__init__(out self, var data:"
-                            " List[List[Scalar[Self.dtype]]])"
-                        ),
-                        message="All rows must have the same length.",
-                        previous_error=None,
-                    )
-                )
-            else:
-                for element in row:
-                    self.data.append(element)
-
-    fn __init__(
-        out self, data: List[Scalar[Self.dtype]], shape: Tuple[Int, Int]
-    ) raises:
-        """Initializes the matrix with a list and shape.
-
-        Args:
-            data: A list of elements to initialize the matrix.
-            shape: A tuple specifying the shape of the matrix (rows, cols).
+            order: The memory layout order, either "C" for row-major or
+                "F" for column-major. Defaults to "C".
 
         Raises:
             ValueError: If the length of the data list does not match the
@@ -113,7 +78,87 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int])"
+                        " List[List[Scalar[Self.dtype]]], order: String)"
+                    ),
+                    message="Data cannot be an empty list.",
+                    previous_error=None,
+                )
+            )
+        self.shape = (len(data), len(data[0]))
+        self.size = self.shape[0] * self.shape[1]
+        if order == "C":
+            self.strides = (self.shape[1], 1)  # Row-major order
+        elif order == "F":
+            self.strides = (1, self.shape[0])  # Column-major order
+        else:
+            raise Error(
+                ValueError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function=(
+                        "Matrix.__init__(out self, var data:"
+                        " List[List[Scalar[Self.dtype]]], order: String)"
+                    ),
+                    message="Invalid order. Must be 'C' or 'F'.",
+                    previous_error=None,
+                )
+            )
+        for row in data:
+            if len(row) != self.shape[1]:
+                raise Error(
+                    ValueError(
+                        file="src/matmojo/types/matrix.mojo",
+                        function=(
+                            "Matrix.__init__(out self, var data:"
+                            " List[List[Scalar[Self.dtype]]], order: String)"
+                        ),
+                        message="All rows must have the same length.",
+                        previous_error=None,
+                    )
+                )
+        if order == "C":
+            self.data = List[Scalar[Self.dtype]](capacity=self.size)
+            for row in data:
+                for element in row:
+                    self.data.append(element)
+        else:  # order == "F"
+            self.data = List[Scalar[Self.dtype]](unsafe_uninit_length=self.size)
+            var row_index = 0
+            for row in data:
+                var col_index = 0
+                for element in row:
+                    self.data[
+                        row_index * self.strides[0]
+                        + col_index * self.strides[1]
+                    ] = element
+                    col_index += 1
+                row_index += 1
+
+    fn __init__(
+        out self,
+        data: List[Scalar[Self.dtype]],
+        shape: Tuple[Int, Int],
+        order: String = "C",
+    ) raises:
+        """Initializes the matrix with a list and shape.
+
+        Args:
+            data: A list of elements to initialize the matrix.
+            shape: A tuple specifying the shape of the matrix (rows, cols).
+            order: The memory layout order, either "C" for row-major or
+                "F" for column-major. Defaults to "C".
+
+        Raises:
+            ValueError: If the length of the data list does not match the
+            product of the shape dimensions.
+        """
+        if len(data) == 0:
+            raise Error(
+                ValueError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function=(
+                        "Matrix.__init__(out self, var data:"
+                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " order: String)"
                     ),
                     message="Data cannot be an empty list.",
                     previous_error=None,
@@ -122,26 +167,81 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         self.data = data.copy()
         self.size = shape[0] * shape[1]
         self.shape = shape
-        self.strides = (shape[1], 1)  # Row-major order
+        if order == "C":
+            self.strides = (shape[1], 1)  # Row-major order
+        elif order == "F":
+            self.strides = (1, shape[0])  # Column-major order
+        else:
+            raise Error(
+                ValueError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function=(
+                        "Matrix.__init__(out self, var data:"
+                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " order: String)"
+                    ),
+                    message="Invalid order. Must be 'C' or 'F'.",
+                    previous_error=None,
+                )
+            )
         if len(self.data) != self.size:
             raise Error(
                 ValueError(
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int])"
+                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " order: String)"
                     ),
                     message="Data length does not match the specified shape.",
                     previous_error=None,
                 )
             )
 
+    # ===--------------------------------------------------------------------===#
+    # Element Access and Mutation
+    # ===--------------------------------------------------------------------===#
+
+    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
+        """Gets the element at the specified indices.
+
+        Args:
+            x: The row index.
+            y: The column index.
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+
+        Returns:
+            The element at the specified indices.
+        """
+        if x < 0 or x >= self.shape[0] or y < 0 or y >= self.shape[1]:
+            raise Error(
+                IndexError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function=(
+                        "Matrix.__getitem__(self, x: Int, y: Int) ->"
+                        " Scalar[Self.dtype]"
+                    ),
+                    message="Index out of bounds.",
+                    previous_error=None,
+                )
+            )
+        return self.data[x * self.strides[0] + y * self.strides[1]]
+
+    # ===--------------------------------------------------------------------===#
+    # String Representation and Writing
+    # ===--------------------------------------------------------------------===#
+
     fn __str__(self) -> String:
         """Returns a string representation of the matrix."""
         result = String("")
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
-                result += String(self.data[i * self.strides[0] + j]) + "\t"
+                result += (
+                    String(self.data[i * self.strides[0] + j * self.strides[1]])
+                    + "\t"
+                )
             if i < self.shape[0] - 1:
                 result += "\n"
         return result
@@ -154,7 +254,9 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             else:
                 writer.write(" [\t")
             for j in range(self.shape[1]):
-                writer.write(self.data[i * self.strides[0] + j])
+                writer.write(
+                    self.data[i * self.strides[0] + j * self.strides[1]]
+                )
                 writer.write("\t")
             writer.write("]")
             if i < self.shape[0] - 1:
