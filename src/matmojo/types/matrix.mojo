@@ -1,5 +1,10 @@
+"""
+This module defines the `Matrix` type.
+"""
+
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.errors import IndexError, ValueError
+from matmojo.types.matrix_view import MatrixView
 from matmojo.utils.indexing import get_offset
 
 
@@ -12,6 +17,12 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
     Parameters:
         dtype: The data type of the matrix elements. Defaults to `DType.float64`.
     """
+
+    # [Mojo Miji]
+    # `comptime` can be used to define a type alias that can be translated back
+    # to the original type at compile time. We do this for convenience.
+    comptime ElementType = Scalar[Self.dtype]
+    """The type of the elements in the matrix, derived from the dtype."""
 
     # [Mojo Miji]
     # If we want to implement a simple 2D matrix type,
@@ -60,7 +71,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
 
     fn __init__(
         out self,
-        data: List[List[Scalar[Self.dtype]]],
+        data: List[List[Self.ElementType]],
         order: String = "C",
     ) raises:
         """Initializes the matrix with a nested list and memory layout order.
@@ -80,7 +91,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[List[Scalar[Self.dtype]]], order: String)"
+                        " List[List[ElementType]], order: String)"
                     ),
                     message="Data cannot be an empty list.",
                     previous_error=None,
@@ -98,7 +109,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[List[Scalar[Self.dtype]]], order: String)"
+                        " List[List[Self.ElementType]], order: String)"
                     ),
                     message="Invalid order. Must be 'C' or 'F'.",
                     previous_error=None,
@@ -111,19 +122,19 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                         file="src/matmojo/types/matrix.mojo",
                         function=(
                             "Matrix.__init__(out self, var data:"
-                            " List[List[Scalar[Self.dtype]]], order: String)"
+                            " List[List[Self.ElementType]], order: String)"
                         ),
                         message="All rows must have the same length.",
                         previous_error=None,
                     )
                 )
         if order == "C":
-            self.data = List[Scalar[Self.dtype]](capacity=self.size)
+            self.data = List[Self.ElementType](capacity=self.size)
             for row in data:
                 for element in row:
                     self.data.append(element)
         else:  # order == "F"
-            self.data = List[Scalar[Self.dtype]](unsafe_uninit_length=self.size)
+            self.data = List[Self.ElementType](unsafe_uninit_length=self.size)
             var row_index = 0
             for row in data:
                 var col_index = 0
@@ -136,7 +147,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
 
     fn __init__(
         out self,
-        data: List[Scalar[Self.dtype]],
+        data: List[Self.ElementType],
         shape: Tuple[Int, Int],
         order: String = "C",
     ) raises:
@@ -158,7 +169,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " List[Self.ElementType], shape: Tuple[Int, Int],"
                         " order: String)"
                     ),
                     message="Data cannot be an empty list.",
@@ -178,7 +189,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " List[Self.ElementType], shape: Tuple[Int, Int],"
                         " order: String)"
                     ),
                     message="Invalid order. Must be 'C' or 'F'.",
@@ -191,7 +202,7 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__init__(out self, var data:"
-                        " List[Scalar[Self.dtype]], shape: Tuple[Int, Int],"
+                        " List[Self.ElementType], shape: Tuple[Int, Int],"
                         " order: String)"
                     ),
                     message="Data length does not match the specified shape.",
@@ -203,7 +214,16 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
     # Element Access and Mutation
     # ===--------------------------------------------------------------------===#
 
-    fn __getitem__(self, x: Int, y: Int) raises -> Scalar[Self.dtype]:
+    # [Mojo Miji]
+    # This method returns a reference to the element at the specified indices.
+    # The mutability of the reference is determined by the mutability of the
+    # underlying data (self.data). Since self.data is a mutable list, the
+    # reference returned by __getitem__ is mutable, allowing for both reading
+    # and writing to the matrix elements.
+    # Thus, `__setitem__` is not needed as a separate method.
+    fn __getitem__(
+        ref self, x: Int, y: Int
+    ) raises -> ref[self.data] Self.ElementType:
         """Gets the element at the specified indices.
 
         Args:
@@ -222,13 +242,38 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                     file="src/matmojo/types/matrix.mojo",
                     function=(
                         "Matrix.__getitem__(self, x: Int, y: Int) ->"
-                        " Scalar[Self.dtype]"
+                        " Self.ElementType"
                     ),
                     message="Index out of bounds.",
                     previous_error=None,
                 )
             )
         return self.data[x * self.strides[0] + y * self.strides[1]]
+
+    # [Mojo Miji]
+    # When you pass `Self.dtype` and `origin_of(self)` as parameters to the
+    # `MatrixView` type, you are creating a new, specific instantiation of the
+    # generic `MatrixView` type that is tailored to the certain data type and
+    # the origin of the current matrix instance.
+    # In another word, if you have a matrix of type `int64` and is called `a`,
+    # then this method will create a specific `MatrixView_int64_origin_a` type
+    # at compile time, and then return an instance of this type.
+    # Mojo compiler will ensure that `a` will not be destroyed as long as the
+    # matrix view is still alive.
+    # The approach of recording the origin, which is `a`, into the parameter of
+    # the `MatrixView` type is called "parameterized origin".
+    fn __getitem__(
+        self, x: Slice, y: Slice
+    ) raises -> MatrixView[dtype = Self.dtype, origin = origin_of(self)]:
+        """Gets a view of the specified row with a slice of columns."""
+        return MatrixView(
+            src=Pointer(to=self),
+            slice_x=x,
+            slice_y=y,
+            initial_shape=self.shape,
+            initial_strides=self.strides,
+            initial_offset=0,
+        )
 
     # ===--------------------------------------------------------------------===#
     # String Representation and Writing

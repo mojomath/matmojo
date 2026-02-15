@@ -1,7 +1,7 @@
 [workspace]
 authors = ["ZHU Yuhao 朱宇浩 <dr.yuhao.zhu@outlook.com>"]
 channels = ["https://conda.modular.com/max-nightly", "https://repo.prefix.dev/modular-community", "conda-forge"]
-name = "matrix-mojo"
+name = "matmojo"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 

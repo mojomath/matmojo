@@ -1,3 +1,9 @@
+"""
+This module defines the `MatrixView` type.
+"""
+
+import math as builtin_math
+
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.matrix import Matrix
 from matmojo.utils.indexing import get_offset
@@ -15,6 +21,9 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         origin: The origin of the matrix.
     """
 
+    comptime ElementType = Scalar[Self.dtype]
+    """The type of the elements in the matrix view, derived from the dtype."""
+
     var src: Pointer[Matrix[Self.dtype], Self.origin]
     """A pointer to the base matrix that this view references."""
     var shape: Tuple[Int, Int]
@@ -29,6 +38,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
     fn __init__(
         out self,
         src: Pointer[Matrix[Self.dtype], Self.origin],
+        *,
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
         offset: Int,
@@ -47,11 +57,66 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         self.offset = offset
         self.size = shape[0] * shape[1]
 
-    fn __getitem__(self, indices: Tuple[Int, Int]) -> Scalar[Self.dtype]:
+    fn __init__(
+        out self,
+        src: Pointer[Matrix[Self.dtype], Self.origin],
+        *,
+        slice_x: Slice,
+        slice_y: Slice,
+        initial_shape: Tuple[Int, Int],
+        initial_strides: Tuple[Int, Int],
+        initial_offset: Int,
+    ) raises:
+        """Initializes a MatrixView instance using slicing parameters."""
+        self.src = src
+        var start_x, end_x, step_x = slice_x.indices(initial_shape[0])
+        var start_y, end_y, step_y = slice_y.indices(initial_shape[1])
+        self.offset = (
+            initial_offset
+            + start_x * initial_strides[0]
+            + start_y * initial_strides[1]
+        )
+        self.shape = (
+            Int(builtin_math.ceildiv(end_x - start_x, step_x)),
+            Int(builtin_math.ceildiv(end_y - start_y, step_y)),
+        )
+        self.strides = (
+            initial_strides[0] * step_x,
+            initial_strides[1] * step_y,
+        )
+        self.size = self.shape[0] * self.shape[1]
+
+    # ===--------------------------------------------------------------------===#
+    # Element Access and Mutation
+    # ===--------------------------------------------------------------------===#
+
+    fn __getitem__(self, x: Int, y: Int) -> Self.ElementType:
         """Accesses an element of the matrix view using row and column indices.
         """
-        var index = get_offset(indices, self.strides, self.offset)
+        var index = get_offset((x, y), self.strides, self.offset)
         return self.src[].data[index]
+
+    # [Mojo Miji]
+    # The return type can also be written as:
+    # `MatrixView[Self.dtype, Self.origin]`
+    # It means that the view on view has the same data type and origin as the
+    # original view.
+    fn __getitem__(
+        self, x: Slice, y: Slice
+    ) raises -> MatrixView[Self.dtype, Self.origin]:
+        """Gets a view of the specified row with a slice of columns."""
+        return Self(
+            src=self.src,
+            slice_x=x,
+            slice_y=y,
+            initial_shape=self.shape,
+            initial_strides=self.strides,
+            initial_offset=self.offset,
+        )
+
+    # ===--------------------------------------------------------------------===#
+    # String Representation and Writing
+    # ===--------------------------------------------------------------------===#
 
     fn __str__(self) -> String:
         """Returns a string representation of the matrix."""

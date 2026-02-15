@@ -21,3 +21,4 @@ kgen.trace.*
 # Local files
 local
 test*.mojo
+temp*.mojo

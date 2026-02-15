@@ -1,4 +1,4 @@
-"""Indexing and memory layout utilities for MatMojo."""
+"""This module provides indexing and memory layout utilities for MatMojo."""
 
 
 fn get_offset(
