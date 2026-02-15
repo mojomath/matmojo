@@ -1,0 +1,23 @@
+
+# pixi environments
+.pixi
+*.egg-info
+pixi.lock
+
+# MacOS
+.DS_Store
+
+# VS Code + Zed + Helix ...
+.vscode
+.zed
+.helix
+
+# kgen trace
+kgen.trace.*
+
+# Packages
+*.mojopkg
+
+# Local files
+local
+test*.mojo
