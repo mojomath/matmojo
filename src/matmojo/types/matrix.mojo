@@ -1,7 +1,9 @@
+from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.errors import IndexError, ValueError
+from matmojo.utils.indexing import get_offset
 
 
-struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
+struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
     """A 2D matrix type.
     A matrix owns its data and can write to it. The elements are stored in a
     contiguous block of memory in either row-major (C-contiguous) or
@@ -127,8 +129,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
                 var col_index = 0
                 for element in row:
                     self.data[
-                        row_index * self.strides[0]
-                        + col_index * self.strides[1]
+                        get_offset((row_index, col_index), self.strides)
                     ] = element
                     col_index += 1
                 row_index += 1
@@ -239,8 +240,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
         for i in range(self.shape[0]):
             for j in range(self.shape[1]):
                 result += (
-                    String(self.data[i * self.strides[0] + j * self.strides[1]])
-                    + "\t"
+                    String(self.data[get_offset((i, j), self.strides)]) + "\t"
                 )
             if i < self.shape[0] - 1:
                 result += "\n"
@@ -254,9 +254,7 @@ struct Matrix[dtype: DType = DType.float64](Stringable, Writable):
             else:
                 writer.write(" [\t")
             for j in range(self.shape[1]):
-                writer.write(
-                    self.data[i * self.strides[0] + j * self.strides[1]]
-                )
+                writer.write(self.data[get_offset((i, j), self.strides)])
                 writer.write("\t")
             writer.write("]")
             if i < self.shape[0] - 1:

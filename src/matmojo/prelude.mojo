@@ -14,6 +14,7 @@ Prelude module for MatMojo.
 # to understand where specific functions or types are coming from.
 
 from matmojo.types.matrix import Matrix
+from matmojo.types.matrix_view import MatrixView
 
 comptime float64 = DType.float64
 """Alias for 64-bit floating point data type."""
