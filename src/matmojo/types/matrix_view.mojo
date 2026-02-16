@@ -42,7 +42,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         shape: Tuple[Int, Int],
         strides: Tuple[Int, Int],
         offset: Int,
-    ) raises:
+    ):
         """Initializes a MatrixView instance that references a Matrix.
 
         Args:
@@ -66,7 +66,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         initial_shape: Tuple[Int, Int],
         initial_strides: Tuple[Int, Int],
         initial_offset: Int,
-    ) raises:
+    ):
         """Initializes a MatrixView instance using slicing parameters."""
         self.src = src
         var start_x, end_x, step_x = slice_x.indices(initial_shape[0])
@@ -137,6 +137,19 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
 
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the matrix view to a writer."""
+        writer.write("MatrixView, ")
+        writer.write(self.dtype)
+        writer.write(", ")
+        writer.write(self.shape[0])
+        writer.write("x")
+        writer.write(self.shape[1])
+        writer.write(", strides: ")
+        writer.write(self.strides[0])
+        writer.write("-")
+        writer.write(self.strides[1])
+        writer.write(", offset: ")
+        writer.write(self.offset)
+        writer.write(":\n")
         for i in range(self.shape[0]):
             if i == 0:
                 writer.write("[[\t")

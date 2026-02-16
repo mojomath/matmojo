@@ -8,7 +8,9 @@ from matmojo.types.matrix_view import MatrixView
 from matmojo.utils.indexing import get_offset
 
 
-struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
+struct Matrix[dtype: DType = DType.float64](
+    Copyable, MatrixLike, Movable, Stringable, Writable
+):
     """A 2D matrix type.
     A matrix owns its data and can write to it. The elements are stored in a
     contiguous block of memory in either row-major (C-contiguous) or
@@ -210,8 +212,23 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
                 )
             )
 
+    fn __copyinit__(out self, other: Self):
+        """Initializes the matrix by copying another matrix."""
+        self.data = other.data.copy()
+        self.shape = other.shape
+        self.strides = other.strides
+        self.size = other.size
+
+    fn __moveinit__(out self, deinit other: Self):
+        """Initializes the matrix by moving another matrix."""
+        self.data = other.data^
+        self.shape = other.shape^
+        self.strides = other.strides^
+        self.size = other.size
+
     # ===--------------------------------------------------------------------===#
     # Element Access and Mutation
+    # View Access
     # ===--------------------------------------------------------------------===#
 
     # [Mojo Miji]
@@ -275,6 +292,17 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
             initial_offset=0,
         )
 
+    fn view(self) -> MatrixView[Self.dtype, origin_of(self)]:
+        """Gets a view of the entire matrix."""
+        return MatrixView(
+            src=Pointer(to=self),
+            slice_x=Slice(0, self.shape[0], 1),
+            slice_y=Slice(0, self.shape[1], 1),
+            initial_shape=self.shape,
+            initial_strides=self.strides,
+            initial_offset=0,
+        )
+
     # ===--------------------------------------------------------------------===#
     # String Representation and Writing
     # ===--------------------------------------------------------------------===#
@@ -293,6 +321,17 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
 
     fn write_to[W: Writer](self, mut writer: W):
         """Writes the matrix to a writer."""
+        writer.write("Matrix, ")
+        writer.write(self.dtype)
+        writer.write(", ")
+        writer.write(self.shape[0])
+        writer.write("x")
+        writer.write(self.shape[1])
+        writer.write(", strides: ")
+        writer.write(self.strides[0])
+        writer.write("-")
+        writer.write(self.strides[1])
+        writer.write(":\n")
         for i in range(self.shape[0]):
             if i == 0:
                 writer.write("[[\t")
@@ -305,4 +344,4 @@ struct Matrix[dtype: DType = DType.float64](MatrixLike, Stringable, Writable):
             if i < self.shape[0] - 1:
                 writer.write("\n")
             else:
-                writer.write("]")
+                writer.write("]\n")
