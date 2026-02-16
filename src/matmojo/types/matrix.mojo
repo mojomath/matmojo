@@ -30,6 +30,61 @@ struct Matrix[S: StorageLike = DynamicStorage](
         self.storage = storage^
 
     # ===--------------------------------------------------------------------===#
+    # Element Access and Mutation
+    # View Access
+    # ===--------------------------------------------------------------------===#
+    fn __getitem__(self, row: Int, col: Int) raises -> Self.ElementType:
+        """Gets the element at the specified indices.
+
+        Args:
+            row: The row index.
+            col: The column index.
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+
+        Returns:
+            The element at the specified indices.
+        """
+        if row < 0 or row >= self.nrows() or col < 0 or col >= self.ncols():
+            raise Error(
+                IndexError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function="Matrix.__getitem__(self, row: Int, col: Int)",
+                    message="Index out of bounds.",
+                    previous_error=None,
+                )
+            )
+        return self.storage.load(row, col)
+
+    fn __setitem__(
+        mut self, row: Int, col: Int, value: Self.ElementType
+    ) raises -> None:
+        """Sets the element at the specified indices.
+
+        Args:
+            row: The row index.
+            col: The column index.
+            value: The value to set at the specified indices.
+
+        Raises:
+            IndexError: If the indices are out of bounds.
+        """
+        if row < 0 or row >= self.nrows() or col < 0 or col >= self.ncols():
+            raise Error(
+                IndexError(
+                    file="src/matmojo/types/matrix.mojo",
+                    function=(
+                        "Matrix.__setitem__(self, row: Int, col: Int, value:"
+                        " Self.ElementType)"
+                    ),
+                    message="Index out of bounds.",
+                    previous_error=None,
+                )
+            )
+        self.storage.store(row, col, value)
+
+    # ===--------------------------------------------------------------------===#
     # Basic Matrix characteristics
     # ===--------------------------------------------------------------------===#
     @always_inline

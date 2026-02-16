@@ -58,7 +58,6 @@ struct DynamicStorage(Copyable, ImplicitlyDestructible, Movable, StorageLike):
         """Returns the column stride of the storage."""
         return self._col_stride
 
-    @always_inline
     fn load(self, row: Int, col: Int) raises IndexError -> Float64:
         """Loads the element at the given row and column."""
         if (
@@ -73,8 +72,54 @@ struct DynamicStorage(Copyable, ImplicitlyDestructible, Movable, StorageLike):
                 message="Index out of bounds",
                 previous_error=None,
             )
-        offset = row * self._row_stride + col * self._col_stride
+        var offset = row * self._row_stride + col * self._col_stride
         return self._data[offset]
+
+    fn store(
+        mut self, row: Int, col: Int, value: Float64
+    ) raises IndexError -> None:
+        """Stores the given value at the specified row and column."""
+        if (
+            (row < 0)
+            or (row >= self._nrows)
+            or (col < 0)
+            or (col >= self._ncols)
+        ):
+            raise IndexError(
+                file="src/matmojo/types/dynamic_storage.mojo",
+                function="DynamicStorage.store",
+                message="Index out of bounds",
+                previous_error=None,
+            )
+        var offset = row * self._row_stride + col * self._col_stride
+        self._data[offset] = value
+
+    fn unsafe_load(self, row: Int, col: Int) -> Float64:
+        """Loads the element at the given row and column without bounds checking.
+        """
+        debug_assert(
+            (0 <= row)
+            and (row < self._nrows)
+            and (0 <= col)
+            and (col < self._ncols),
+            "Debug assertion failed: Indices out of bounds in `unsafe_load`",
+        )
+        var offset = row * self._row_stride + col * self._col_stride
+        return (self._data._data + offset)[]
+
+    fn unsafe_store(mut self, row: Int, col: Int, value: Float64) -> None:
+        """Stores the given value at the specified row and column without bounds
+        checking.
+        """
+        debug_assert(
+            (0 <= row)
+            and (row < self._nrows)
+            and (0 <= col)
+            and (col < self._ncols),
+            "Debug assertion failed: Indices out of bounds in `unsafe_store`",
+        )
+        var offset = row * self._row_stride + col * self._col_stride
+        (self._data._data + offset)[] = value
 
     @always_inline
     fn data(self) -> Span[Float64, origin_of(self._data)]:
