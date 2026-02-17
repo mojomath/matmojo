@@ -13,8 +13,7 @@ Prelude module for MatMojo.
 # it will potentially pollute the global namespace and make it harder for users
 # to understand where specific functions or types are coming from.
 
-from matmojo.types.matrix import Matrix
-from matmojo.types.matrix_view import MatrixView
+import matmojo as mm
 
 comptime float64 = DType.float64
 """Alias for 64-bit floating point data type."""

@@ -1,6 +1,6 @@
 # MatMojo <!-- omit in toc -->
 
-A matrix computation library in Mojo, built for [Mojo Miji](https://mojo-lang.com/miji/) practice.
+A matrix and numeric computing library for Mojo.
 
 **[Docs](docs/index.md)** | **[Miji: Design](https://mojo-lang.com/miji/apply/design.html)** | **[Miji: Make it work](https://mojo-lang.com/miji/apply/work.html)**
 
@@ -14,13 +14,32 @@ A matrix computation library in Mojo, built for [Mojo Miji](https://mojo-lang.co
 
 ## Overview
 
-MatMojo is a learning-focused Mojo package that implements a 2D matrix type and its core operations. The initial goal is to support [Mojo Miji](https://mojo-lang.com/miji/) practice content, focus on two-dimensional matrix computing, provide simple and intuitive syntax, and apply a series of targeted optimizations. Throughout the source code, detailed comments and explanations are provided, under the tag `[Mojo Miji]` to help readers understand the design decisions and implementation details.
+MatMojo focuses on efficient matrix operations and provides the foundations for linear algebra workflows in Mojo.
 
-Compared to a general-purpose multi-dimensional array library, MatMojo is more specialized and optimized for 2D matrices. This allows us to keep the API small, clean, and focused, while still providing powerful functionality for matrix computations.
+Compared to a general-purpose multi-dimensional array library, MatMojo is more specialized and optimized for 2D matrices. This allows us to keep the API small, clean, and focused, while still providing powerful functionality for matrix computations. If you need multi-dimensional arrays, consider the [NuMojo package](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo).
 
-If you need multi-dimensional arrays, consider the [NuMojo package](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo).
+Below are some differences between **MatMojo** (this package) and **NuMojo** (a general-purpose multi-dimensional array library):
+
+| Feature                  | **MatMojo**                                       | **NuMojo**                                         |
+| ------------------------ | ------------------------------------------------- | -------------------------------------------------- |
+| **Primary goal**         | Linear algebra & matrix computation               | General-purpose ndarray / tensor computing         |
+| **Supported dimensions** | 2D only (matrices)                                | Arbitrary dimensions (N-D arrays)                  |
+| **Core abstraction**     | Matrix as a mathematical object                   | N-dimensional array container                      |
+| **Target domain**        | BLAS / LAPACK style workflows                     | NumPy-style scientific computing                   |
+| **Storage model**        | Matrix-specific storage (row/col strides)         | Generic strided N-D storage                        |
+| **Static shapes**        | First-class support (compile-time sizes)          | Not a primary focus                                |
+| **View semantics**       | Safe read-only + mutable views                    | General slicing & broadcasting                     |
+| **Indexing model**       | Strict matrix indexing (row, col)                 | N-dimensional indexing                             |
+| **Negative indexing**    | Not supported (explicit & safe)                   | Typically supported                                |
+| **Broadcasting**         | Minimal / linear-algebra oriented                 | Full NumPy-style broadcasting                      |
+| **Specialized kernels**  | Matmul / decompositions / solvers                 | Elementwise & tensor ops                           |
+| **Performance focus**    | SIMD & BLAS-style kernels                         | Generic tensor operations                          |
+| **API philosophy**       | Mathematical clarity & safety                     | Flexibility & generality                           |
+| **Typical use cases**    | Solvers, decompositions, numerical linear algebra | Scientific computing, ML preprocessing, tensor ops |
 
 ## Goals
+
+The initial goal is to support [Mojo Miji](https://mojo-lang.com/miji/) practice content, focus on two-dimensional matrix computing, provide simple and intuitive syntax, and apply a series of targeted optimizations. Throughout the source code, detailed comments and explanations are provided, under the tag `[Mojo Miji]` to help readers understand the design decisions and implementation details.
 
 - Keep the API small and easy to read while learning Mojo.
 - Provide simple and intuitive syntax for matrix creation and operations.
