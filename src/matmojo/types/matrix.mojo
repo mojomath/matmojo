@@ -2,14 +2,16 @@
 This module defines the `Matrix` type.
 """
 
+import math as builtin_math
+from sys.intrinsics import _type_is_eq
+
 from matmojo.traits.storage_like import StorageLike
 from matmojo.types.errors import IndexError, ValueError
 from matmojo.types.dynamic_storage import DynamicStorage
+from matmojo.types.view_storage import ViewStorage
 
 
-struct Matrix[S: StorageLike = DynamicStorage](
-    Copyable, Movable, Stringable, Writable
-):
+struct Matrix[S: StorageLike](Copyable, Movable, Stringable, Writable):
     """A 2D matrix type.
     A matrix owns its data and can write to it. The elements are stored in a
     contiguous block of memory in either row-major (C-contiguous) or
@@ -31,7 +33,6 @@ struct Matrix[S: StorageLike = DynamicStorage](
 
     # ===--------------------------------------------------------------------===#
     # Element Access and Mutation
-    # View Access
     # ===--------------------------------------------------------------------===#
     fn __getitem__(self, row: Int, col: Int) raises -> Self.ElementType:
         """Gets the element at the specified indices.
@@ -56,6 +57,58 @@ struct Matrix[S: StorageLike = DynamicStorage](
                 )
             )
         return self.storage.load(row, col)
+
+    fn __getitem__(
+        self, rows: Slice, cols: Slice
+    ) raises ValueError -> Matrix[ViewStorage[origin_of(self.storage)]]:
+        """Gets a view of the specified row with a slice of columns."""
+        var start_row, end_row, step_row = rows.indices(self.nrows())
+        var start_col, end_col, step_col = cols.indices(self.ncols())
+        var nrows = builtin_math.ceildiv(end_row - start_row, step_row)
+        var ncols = builtin_math.ceildiv(end_col - start_col, step_col)
+        var row_stride = self.row_stride() * step_row
+        var col_stride = self.col_stride() * step_col
+        var offset = (
+            self.offset()
+            + start_row * self.row_stride()
+            + start_col * self.col_stride()
+        )
+
+        @parameter
+        if _type_is_eq[Self.S, DynamicStorage]():
+            var storage = ViewStorage(
+                # data=rebind[Span[Float64, origin_of(self.storage)]](
+                #     Span(rebind[DynamicStorage](self.storage).data())
+                # ),
+                data=Span(self.storage._data),
+                nrows=nrows,
+                ncols=ncols,
+                row_stride=row_stride,
+                col_stride=col_stride,
+                offset=offset,
+            )
+            return Matrix(storage=storage^)
+        elif _type_is_eq[Self.S, ViewStorage[origin_of(self.storage)]]():
+            var storage = ViewStorage(
+                data=Span(
+                    rebind[ViewStorage[origin_of(self.storage)]](
+                        self.storage
+                    ).data()
+                ),
+                nrows=nrows,
+                ncols=ncols,
+                row_stride=row_stride,
+                col_stride=col_stride,
+                offset=offset,
+            )
+            return Matrix(storage=storage^)
+        else:
+            raise ValueError(
+                file="src/matmojo/types/matrix.mojo",
+                function="Matrix.__getitem__(self, rows: Slice, cols: Slice)",
+                message="Unsupported storage type for slicing.",
+                previous_error=None,
+            )
 
     fn __setitem__(
         mut self, row: Int, col: Int, value: Self.ElementType
@@ -119,6 +172,11 @@ struct Matrix[S: StorageLike = DynamicStorage](
         return (self.row_stride(), self.col_stride())
 
     @always_inline
+    fn offset(self) -> Int:
+        """Returns the offset of the matrix."""
+        return self.storage.offset()
+
+    @always_inline
     fn size(self) -> Int:
         """Returns the total number of elements in the matrix."""
         return self.nrows() * self.ncols()
@@ -142,17 +200,7 @@ struct Matrix[S: StorageLike = DynamicStorage](
     fn write_to[W: Writer](self, mut writer: W) -> None:
         """Writes the matrix to a writer."""
         try:
-            writer.write("Matrix, ")
-            writer.write("Float64")
-            writer.write(", ")
-            writer.write(self.nrows())
-            writer.write("x")
-            writer.write(self.ncols())
-            writer.write(", strides: ")
-            writer.write(self.row_stride())
-            writer.write("-")
-            writer.write(self.col_stride())
-            writer.write(":\n")
+            writer.write(self.storage.type_as_string() + "\n")
             for i in range(self.nrows()):
                 if i == 0:
                     writer.write("[[\t")

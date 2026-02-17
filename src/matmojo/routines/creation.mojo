@@ -9,7 +9,7 @@ from matmojo.types.dynamic_storage import DynamicStorage
 
 
 fn matrix(
-    list: List[List[Float64]], order: String
+    list: List[List[Float64]], order: String = "C"
 ) raises -> Matrix[DynamicStorage]:
     if len(list) == 0:
         raise Error(

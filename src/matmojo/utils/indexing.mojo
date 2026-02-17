@@ -1,9 +1,18 @@
 """This module provides indexing and memory layout utilities for MatMojo."""
 
 
+@always_inline
+fn indices_out_of_bounds(row: Int, col: Int, nrows: Int, ncols: Int) -> Bool:
+    """Checks if the given row and column indices are out of bounds."""
+    return (row < 0) or (row >= nrows) or (col < 0) or (col >= ncols)
+
+
+@always_inline
 fn get_offset(
-    indices: Tuple[Int, Int],
-    strides: Tuple[Int, Int],
+    row: Int,
+    col: Int,
+    row_stride: Int,
+    col_stride: Int,
     initial_offset: Int = 0,
 ) -> Int:
     """Calculates the linear offset in a buffer for given indices.
@@ -12,8 +21,10 @@ fn get_offset(
     based on its 2D indices, strides, and an optional initial offset.
 
     Args:
-        indices: The 2D indices (row, col) of the element to access.
-        strides: The strides for each dimension (row_stride, col_stride).
+        row: The row index of the element to access.
+        col: The column index of the element to access.
+        row_stride: The stride for the row dimension.
+        col_stride: The stride for the column dimension.
         initial_offset: An optional offset to add to the computed position.
             Defaults to 0. Useful for views or slices.
 
@@ -27,6 +38,4 @@ fn get_offset(
         # For a matrix with column-major layout (row_stride=1, col_stride=4):
         get_offset((2, 3), (1, 4))  # Returns 14 (2*1 + 3*4).
     """
-    var row = indices[0]
-    var col = indices[1]
-    return initial_offset + row * strides[0] + col * strides[1]
+    return initial_offset + row * row_stride + col * col_stride

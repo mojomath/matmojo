@@ -18,6 +18,10 @@ trait StorageLike(Copyable, ImplicitlyDestructible, Movable):
         """Returns the column stride of the storage."""
         ...
 
+    fn offset(self) -> Int:
+        """Returns the offset of the storage."""
+        ...
+
     fn load(self, row: Int, col: Int) raises IndexError -> Float64:
         """Loads the element at the given row and column."""
         ...
@@ -37,4 +41,8 @@ trait StorageLike(Copyable, ImplicitlyDestructible, Movable):
         """Stores the given value at the specified row and column without bounds
         checking.
         """
+        ...
+
+    fn type_as_string(self) -> String:
+        """Returns a string representation of the type of this storage."""
         ...

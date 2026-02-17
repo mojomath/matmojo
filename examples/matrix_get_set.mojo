@@ -1,8 +1,8 @@
-from matmojo.prelude import *
+import matmojo as mm
 
 
 fn main() raises:
-    var m = Matrix[int64](
+    var m = mm.routines.creation.matrix(
         [
             [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
             [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
@@ -17,10 +17,10 @@ fn main() raises:
     m[0, 0] = 999
     print("A 8x10 matrix:\n", m)
 
-    v1 = m[1::2, 0:8:3]
+    var v1 = m[1::2, 0:8:3]
     print("A view of the matrix. Rows 1, 3, 5, 7. Columns 0, 3, 6:\n", v1)
 
-    v2 = v1[1::2, 1::]
+    var v2 = v1[1::2, 1::]
     print("A view of the previous view. Rows 1, 3. Columns 1, 2:\n", v2)
 
     print("The first element of v1:", v1[0, 0])
