@@ -6,6 +6,7 @@ from matmojo.types.errors import ValueError
 from matmojo.types.matrix import Matrix
 from matmojo.types.matrix_view import MatrixView
 from matmojo.types.static_matrix import StaticMatrix
+from matmojo.utils.indexing import get_offset
 
 # ===---------------------------------------------------------------------- ===#
 # Matrix creation routines
@@ -17,7 +18,7 @@ from matmojo.types.static_matrix import StaticMatrix
 
 
 fn matrix[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     list: List[List[Scalar[dtype]]], order: String = "C"
 ) raises ValueError -> Matrix[dtype]:
@@ -88,7 +89,7 @@ fn matrix[
 
 
 fn matrix[
-    dtype: DType
+    dtype: DType = DType.float64
 ](
     *,
     var flat_list: List[Scalar[dtype]],
@@ -217,4 +218,177 @@ fn smatrix[
                 i * result.row_stride + j * result.col_stride
             ] = flat_list[offset]
             offset += 1
+    return result^
+
+
+# ===---------------------------------------------------------------------- ===#
+# Convenience constructors
+# - zeros(), ones(), full()
+# - eye(), identity()
+# - diag()
+# ===---------------------------------------------------------------------- ===#
+
+
+fn zeros[dtype: DType = DType.float64](nrows: Int, ncols: Int) -> Matrix[dtype]:
+    """Creates a matrix filled with zeros.
+
+    Parameters:
+        dtype: The data type of the matrix elements. Defaults to `DType.float64`.
+
+    Args:
+        nrows: The number of rows in the matrix.
+        ncols: The number of columns in the matrix.
+
+    Returns:
+        A new matrix of shape (nrows, ncols) filled with zeros.
+    """
+    return Matrix[dtype](
+        data=List[Scalar[dtype]](length=nrows * ncols, fill=0),
+        nrows=nrows,
+        ncols=ncols,
+        row_stride=ncols,
+        col_stride=1,
+    )
+
+
+fn ones[dtype: DType = DType.float64](nrows: Int, ncols: Int) -> Matrix[dtype]:
+    """Creates a matrix filled with ones.
+
+    Parameters:
+        dtype: The data type of the matrix elements. Defaults to `DType.float64`.
+
+    Args:
+        nrows: The number of rows in the matrix.
+        ncols: The number of columns in the matrix.
+
+    Returns:
+        A new matrix of shape (nrows, ncols) filled with ones.
+    """
+    return Matrix[dtype](
+        data=List[Scalar[dtype]](length=nrows * ncols, fill=1),
+        nrows=nrows,
+        ncols=ncols,
+        row_stride=ncols,
+        col_stride=1,
+    )
+
+
+fn full[
+    dtype: DType = DType.float64
+](nrows: Int, ncols: Int, fill_value: Scalar[dtype]) -> Matrix[dtype]:
+    """Creates a matrix filled with a specified value.
+
+    Parameters:
+        dtype: The data type of the matrix elements. Defaults to `DType.float64`.
+
+    Args:
+        nrows: The number of rows in the matrix.
+        ncols: The number of columns in the matrix.
+        fill_value: The value to fill the matrix with.
+
+    Returns:
+        A new matrix of shape (nrows, ncols) filled with fill_value.
+    """
+    return Matrix[dtype](
+        data=List[Scalar[dtype]](length=nrows * ncols, fill=fill_value),
+        nrows=nrows,
+        ncols=ncols,
+        row_stride=ncols,
+        col_stride=1,
+    )
+
+
+fn eye[dtype: DType = DType.float64](n: Int) -> Matrix[dtype]:
+    """Creates an n×n identity matrix.
+
+    Parameters:
+        dtype: The data type of the matrix elements. Defaults to `DType.float64`.
+
+    Args:
+        n: The number of rows and columns in the identity matrix.
+
+    Returns:
+        A new n×n identity matrix with ones on the diagonal and zeros elsewhere.
+    """
+    var data = List[Scalar[dtype]](length=n * n, fill=0)
+    for i in range(n):
+        data[i * n + i] = 1
+    return Matrix[dtype](
+        data=data^,
+        nrows=n,
+        ncols=n,
+        row_stride=n,
+        col_stride=1,
+    )
+
+
+fn identity[dtype: DType = DType.float64](n: Int) -> Matrix[dtype]:
+    """Creates an n×n identity matrix. Alias for `eye()`.
+
+    Parameters:
+        dtype: The data type of the matrix elements. Defaults to `DType.float64`.
+
+    Args:
+        n: The number of rows and columns in the identity matrix.
+
+    Returns:
+        A new n×n identity matrix with ones on the diagonal and zeros elsewhere.
+    """
+    return eye[dtype](n)
+
+
+fn diag[dtype: DType](var values: List[Scalar[dtype]]) -> Matrix[dtype]:
+    """Creates a square diagonal matrix from a list of values.
+
+    Parameters:
+        dtype: The data type of the matrix elements.
+
+    Args:
+        values: A list of diagonal values.
+
+    Returns:
+        A new n×n matrix with the given values on the diagonal and zeros
+        elsewhere, where n is the length of `values`.
+    """
+    var n = len(values)
+    var data = List[Scalar[dtype]](length=n * n, fill=0)
+    for i in range(n):
+        data[i * n + i] = values[i]
+    return Matrix[dtype](
+        data=data^,
+        nrows=n,
+        ncols=n,
+        row_stride=n,
+        col_stride=1,
+    )
+
+
+fn diag[
+    dtype: DType
+](mat: Matrix[dtype]) raises ValueError -> List[Scalar[dtype]]:
+    """Extracts the diagonal elements from a matrix.
+
+    Parameters:
+        dtype: The data type of the matrix elements.
+
+    Args:
+        mat: The input matrix.
+
+    Returns:
+        A list containing the diagonal elements of the matrix.
+
+    Raises:
+        ValueError: If the matrix is not square.
+    """
+    if mat.nrows != mat.ncols:
+        raise ValueError(
+            file="src/matmojo/routines/creation.mojo",
+            function="diag()",
+            message="Matrix must be square to extract diagonal.",
+            previous_error=None,
+        )
+    var n = mat.nrows
+    var result = List[Scalar[dtype]](length=n, fill=0)
+    for i in range(n):
+        result[i] = mat.data[get_offset(i, i, mat.row_stride, mat.col_stride)]
     return result^

@@ -307,6 +307,22 @@ struct Matrix[dtype: DType](
     # Basic math dunders
     # ===------------------------------------------------------------------ ===#
 
+    fn __add__(self, other: Self) raises -> Self:
+        """Performs element-wise addition of two matrices."""
+        return matmojo.routines.math.add(self, other)
+
+    fn __sub__(self, other: Self) raises -> Self:
+        """Performs element-wise subtraction of two matrices."""
+        return matmojo.routines.math.sub(self, other)
+
+    fn __mul__(self, other: Self) raises -> Self:
+        """Performs element-wise multiplication of two matrices."""
+        return matmojo.routines.math.mul(self, other)
+
+    fn __truediv__(self, other: Self) raises -> Self:
+        """Performs element-wise division of two matrices."""
+        return matmojo.routines.math.div(self, other)
+
     fn __matmul__(self, other: Self) raises ValueError -> Self:
         """Performs matrix multiplication of two matrices."""
         return matmojo.routines.math.matmul(self, other)

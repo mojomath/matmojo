@@ -9,6 +9,7 @@ from matmojo.types.errors import ValueError
 from matmojo.types.static_matrix import StaticMatrix
 from matmojo.types.matrix import Matrix
 from matmojo.traits.matrix_like import MatrixLike
+from matmojo.utils.indexing import get_offset
 
 # [Mojo Miji]
 # We use the `MatrixLike` trait to perform item-wise, naive matrix operations.
@@ -202,3 +203,277 @@ fn matmul[
     parallelize[closure_a_rows](a.nrows, a.nrows)
 
     return result^
+
+
+# ===---------------------------------------------------------------------- ===#
+# Dynamic Matrix element-wise operations
+# ===---------------------------------------------------------------------- ===#
+
+
+fn add[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
+    """Performs element-wise addition of two dynamic matrices.
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix.
+
+    Returns:
+        A new matrix containing the element-wise sum of a and b.
+
+    Raises:
+        ValueError: If the shapes of a and b do not match.
+    """
+    if a.nrows != b.nrows or a.ncols != b.ncols:
+        raise ValueError(
+            file="src/matmojo/routines/math.mojo",
+            function="add()",
+            message="Input matrices must have the same shape.",
+            previous_error=None,
+        )
+    var data = List[Scalar[dtype]](unsafe_uninit_length=a.nrows * a.ncols)
+    for i in range(a.nrows):
+        for j in range(a.ncols):
+            data[i * a.ncols + j] = (
+                a.data[get_offset(i, j, a.row_stride, a.col_stride)]
+                + b.data[get_offset(i, j, b.row_stride, b.col_stride)]
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=a.nrows,
+        ncols=a.ncols,
+        row_stride=a.ncols,
+        col_stride=1,
+    )
+
+
+fn sub[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
+    """Performs element-wise subtraction of two dynamic matrices.
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix.
+
+    Returns:
+        A new matrix containing the element-wise difference of a and b.
+
+    Raises:
+        ValueError: If the shapes of a and b do not match.
+    """
+    if a.nrows != b.nrows or a.ncols != b.ncols:
+        raise ValueError(
+            file="src/matmojo/routines/math.mojo",
+            function="sub()",
+            message="Input matrices must have the same shape.",
+            previous_error=None,
+        )
+    var data = List[Scalar[dtype]](unsafe_uninit_length=a.nrows * a.ncols)
+    for i in range(a.nrows):
+        for j in range(a.ncols):
+            data[i * a.ncols + j] = (
+                a.data[get_offset(i, j, a.row_stride, a.col_stride)]
+                - b.data[get_offset(i, j, b.row_stride, b.col_stride)]
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=a.nrows,
+        ncols=a.ncols,
+        row_stride=a.ncols,
+        col_stride=1,
+    )
+
+
+fn mul[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
+    """Performs element-wise multiplication of two dynamic matrices.
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix.
+
+    Returns:
+        A new matrix containing the element-wise product of a and b.
+
+    Raises:
+        ValueError: If the shapes of a and b do not match.
+    """
+    if a.nrows != b.nrows or a.ncols != b.ncols:
+        raise ValueError(
+            file="src/matmojo/routines/math.mojo",
+            function="mul()",
+            message="Input matrices must have the same shape.",
+            previous_error=None,
+        )
+    var data = List[Scalar[dtype]](unsafe_uninit_length=a.nrows * a.ncols)
+    for i in range(a.nrows):
+        for j in range(a.ncols):
+            data[i * a.ncols + j] = (
+                a.data[get_offset(i, j, a.row_stride, a.col_stride)]
+                * b.data[get_offset(i, j, b.row_stride, b.col_stride)]
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=a.nrows,
+        ncols=a.ncols,
+        row_stride=a.ncols,
+        col_stride=1,
+    )
+
+
+fn div[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
+    """Performs element-wise division of two dynamic matrices.
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix.
+
+    Returns:
+        A new matrix containing the element-wise quotient of a and b.
+
+    Raises:
+        ValueError: If the shapes of a and b do not match.
+    """
+    if a.nrows != b.nrows or a.ncols != b.ncols:
+        raise ValueError(
+            file="src/matmojo/routines/math.mojo",
+            function="div()",
+            message="Input matrices must have the same shape.",
+            previous_error=None,
+        )
+    var data = List[Scalar[dtype]](unsafe_uninit_length=a.nrows * a.ncols)
+    for i in range(a.nrows):
+        for j in range(a.ncols):
+            data[i * a.ncols + j] = (
+                a.data[get_offset(i, j, a.row_stride, a.col_stride)]
+                / b.data[get_offset(i, j, b.row_stride, b.col_stride)]
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=a.nrows,
+        ncols=a.ncols,
+        row_stride=a.ncols,
+        col_stride=1,
+    )
+
+
+# ===---------------------------------------------------------------------- ===#
+# Scalar–Matrix operations
+# ===---------------------------------------------------------------------- ===#
+
+
+fn scalar_add[
+    dtype: DType
+](mat: Matrix[dtype], scalar: Scalar[dtype]) -> Matrix[dtype]:
+    """Adds a scalar to every element of a matrix.
+
+    Args:
+        mat: The input matrix.
+        scalar: The scalar value to add.
+
+    Returns:
+        A new matrix with every element incremented by the scalar.
+    """
+    var data = List[Scalar[dtype]](unsafe_uninit_length=mat.nrows * mat.ncols)
+    for i in range(mat.nrows):
+        for j in range(mat.ncols):
+            data[i * mat.ncols + j] = (
+                mat.data[get_offset(i, j, mat.row_stride, mat.col_stride)]
+                + scalar
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=mat.nrows,
+        ncols=mat.ncols,
+        row_stride=mat.ncols,
+        col_stride=1,
+    )
+
+
+fn scalar_sub[
+    dtype: DType
+](mat: Matrix[dtype], scalar: Scalar[dtype]) -> Matrix[dtype]:
+    """Subtracts a scalar from every element of a matrix.
+
+    Args:
+        mat: The input matrix.
+        scalar: The scalar value to subtract.
+
+    Returns:
+        A new matrix with every element decremented by the scalar.
+    """
+    var data = List[Scalar[dtype]](unsafe_uninit_length=mat.nrows * mat.ncols)
+    for i in range(mat.nrows):
+        for j in range(mat.ncols):
+            data[i * mat.ncols + j] = (
+                mat.data[get_offset(i, j, mat.row_stride, mat.col_stride)]
+                - scalar
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=mat.nrows,
+        ncols=mat.ncols,
+        row_stride=mat.ncols,
+        col_stride=1,
+    )
+
+
+fn scalar_mul[
+    dtype: DType
+](mat: Matrix[dtype], scalar: Scalar[dtype]) -> Matrix[dtype]:
+    """Multiplies every element of a matrix by a scalar.
+
+    Args:
+        mat: The input matrix.
+        scalar: The scalar value to multiply.
+
+    Returns:
+        A new matrix with every element multiplied by the scalar.
+    """
+    var data = List[Scalar[dtype]](unsafe_uninit_length=mat.nrows * mat.ncols)
+    for i in range(mat.nrows):
+        for j in range(mat.ncols):
+            data[i * mat.ncols + j] = (
+                mat.data[get_offset(i, j, mat.row_stride, mat.col_stride)]
+                * scalar
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=mat.nrows,
+        ncols=mat.ncols,
+        row_stride=mat.ncols,
+        col_stride=1,
+    )
+
+
+fn scalar_div[
+    dtype: DType
+](mat: Matrix[dtype], scalar: Scalar[dtype]) -> Matrix[dtype]:
+    """Divides every element of a matrix by a scalar.
+
+    Args:
+        mat: The input matrix.
+        scalar: The scalar value to divide by.
+
+    Returns:
+        A new matrix with every element divided by the scalar.
+    """
+    var data = List[Scalar[dtype]](unsafe_uninit_length=mat.nrows * mat.ncols)
+    for i in range(mat.nrows):
+        for j in range(mat.ncols):
+            data[i * mat.ncols + j] = (
+                mat.data[get_offset(i, j, mat.row_stride, mat.col_stride)]
+                / scalar
+            )
+    return Matrix[dtype](
+        data=data^,
+        nrows=mat.nrows,
+        ncols=mat.ncols,
+        row_stride=mat.ncols,
+        col_stride=1,
+    )
