@@ -5,6 +5,7 @@ This module defines the `StaticMatrix` type which is a statically sized 2D matri
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.errors import IndexError, ValueError
 from matmojo.types.matrix_view import MatrixView
+import matmojo.routines.math
 from matmojo.utils.indexing import (
     indices_within_bounds,
 )
@@ -36,16 +37,16 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         ncols: The number of columns in the matrix.
     """
 
-    comptime PROW = next_power_of_two(Self.nrows)
-    comptime PCOL = next_power_of_two(Self.ncols)
-    comptime row_stride = Self.PCOL
+    comptime BUFFER_ROW_LEN = next_power_of_two(Self.nrows)
+    comptime BUFFER_COL_LEN = next_power_of_two(Self.ncols)
+    comptime BUFFER_SIZE = Self.BUFFER_ROW_LEN * Self.BUFFER_COL_LEN
+    comptime row_stride = Self.BUFFER_COL_LEN
     comptime col_stride = 1
-    comptime size = Self.PROW * Self.PCOL
 
     comptime ElementType = Scalar[Self.dtype]
     """The type of the elements in the matrix, derived from the dtype."""
 
-    var data: SIMD[Self.dtype, Self.size]
+    var data: SIMD[Self.dtype, Self.BUFFER_SIZE]
     """A SIMD array representing the data of the matrix."""
 
     # ===--------------------------------------------------------------------===#
@@ -73,7 +74,7 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
 
     fn get_size(self) -> Int:
         """Returns the total number of elements in the matrix."""
-        return self.size
+        return self.nrows * self.ncols
 
     # ===--------------------------------------------------------------------===#
     # Life Cycle Management
@@ -84,7 +85,11 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         # [Mojo Miji]
         # SIMD() initializes the buffer with zeros at compile time, so we don't
         # need to explicitly fill it with zeros here.
-        self.data = SIMD[Self.dtype, Self.size]()
+        self.data = SIMD[Self.dtype, Self.BUFFER_SIZE]()
+
+    fn __init__(out self, simd: SIMD[Self.dtype, Self.BUFFER_SIZE]):
+        """Initializes the matrix with SIMD that match the size of buffer."""
+        self.data = simd
 
     fn __copyinit__(out self, other: Self):
         """Initializes the matrix by copying another matrix."""
@@ -132,11 +137,29 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
                 writer.write(" [\t")
             for j in range(self.ncols):
                 writer.write(
-                    self.data[i * self.row_stride + j * self.col_stride]
+                    round(
+                        self.data[i * self.row_stride + j * self.col_stride], 4
+                    )
                 )
                 writer.write("\t")
             writer.write("]")
             if i < self.nrows - 1:
                 writer.write("\n")
             else:
-                writer.write("]\n")
+                writer.write("]")
+
+    # ===------------------------------------------------------------------ ===#
+    # Basic math dunders
+    # ===------------------------------------------------------------------ ===#
+
+    fn __add__(self, other: Self) -> Self:
+        """Performs element-wise addition of two matrices."""
+        return matmojo.routines.math.add(self, other)
+
+    fn __matmul__[
+        other_ncols: Int
+    ](
+        self, other: StaticMatrix[Self.dtype, Self.ncols, other_ncols]
+    ) -> StaticMatrix[Self.dtype, Self.nrows, other_ncols]:
+        """Performs matrix multiplication of two matrices."""
+        return matmojo.routines.math.matmul(self, other)

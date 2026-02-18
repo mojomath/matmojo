@@ -1,1 +1,1 @@
-from matmojo.routines.creation import matrix
+from matmojo.routines.creation import matrix, smatrix

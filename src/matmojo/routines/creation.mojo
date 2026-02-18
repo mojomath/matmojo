@@ -148,7 +148,7 @@ fn matrix[
     )
 
 
-fn matrix[
+fn smatrix[
     nrows: Int, ncols: Int, dtype: DType = DType.float64
 ](var list: List[List[Scalar[dtype]]]) raises ValueError -> StaticMatrix[
     dtype, nrows, ncols
@@ -187,7 +187,7 @@ fn matrix[
     return result^
 
 
-fn matrix[
+fn smatrix[
     nrows: Int, ncols: Int, dtype: DType = DType.float64
 ](*, var flat_list: List[Scalar[dtype]]) raises ValueError -> StaticMatrix[
     dtype, nrows, ncols

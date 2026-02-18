@@ -5,6 +5,7 @@ This module defines the `Matrix` type, which is a dynamically sized 2D matrix.
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.errors import IndexError, ValueError
 from matmojo.types.matrix_view import MatrixView
+import matmojo.routines.math
 from matmojo.utils.indexing import (
     get_offset,
     indices_within_bounds,
@@ -110,6 +111,19 @@ struct Matrix[dtype: DType](
         col_stride: Int,
     ):
         self.data = data^
+        self.nrows = nrows
+        self.ncols = ncols
+        self.row_stride = row_stride
+        self.col_stride = col_stride
+
+    fn __init__(
+        out self,
+        nrows: Int,
+        ncols: Int,
+        row_stride: Int,
+        col_stride: Int,
+    ):
+        self.data = List[Self.ElementType](length=nrows * ncols, fill=0)
         self.nrows = nrows
         self.ncols = ncols
         self.row_stride = row_stride
@@ -284,3 +298,11 @@ struct Matrix[dtype: DType](
                 writer.write("\n")
             else:
                 writer.write("]\n")
+
+    # ===------------------------------------------------------------------ ===#
+    # Basic math dunders
+    # ===------------------------------------------------------------------ ===#
+
+    fn __matmul__(self, other: Self) raises ValueError -> Self:
+        """Performs matrix multiplication of two matrices."""
+        return matmojo.routines.math.matmul(self, other)

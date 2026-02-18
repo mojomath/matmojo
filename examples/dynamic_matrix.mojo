@@ -2,6 +2,11 @@ from matmojo.prelude import *
 
 
 fn main() raises:
+    # creation()
+    calculation()
+
+
+fn creation() raises:
     var mat1 = mm.matrix(
         [
             [1.1, 1.2, 1.3, 1.4],
@@ -41,3 +46,28 @@ fn main() raises:
         order="F",
     )
     print("Matrix (column-major with shape):\n", mat4)
+
+
+fn calculation() raises:
+    var a = mm.matrix(
+        [
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+        ],
+        order="C",
+    )
+    var b = mm.matrix(
+        [
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0],
+        ],
+        order="C",
+    )
+    var c = a.copy()
+    for _ in range(10000):
+        c = c @ b
+    print("Result of matrix multiplication:\n", c)
