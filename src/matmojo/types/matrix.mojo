@@ -60,7 +60,7 @@ struct Matrix[dtype: DType](
     # compile time. This also applies to the strides.
     #
     # CORE ATTRIBUTES
-    var data: List[Scalar[Self.dtype]]
+    var data: List[Self.ElementType]
     """The elements of the matrix stored in a contiguous block of memory."""
     var nrows: Int
     """The number of rows in the matrix."""
@@ -70,6 +70,12 @@ struct Matrix[dtype: DType](
     """The stride (in number of elements) to move to the next row."""
     var col_stride: Int
     """The stride (in number of elements) to move to the next column."""
+
+    fn get_data_ptr(
+        self,
+    ) -> UnsafePointer[List[Self.ElementType], origin_of(self.data)]:
+        """Returns a pointer to the underlying data buffer of the matrix."""
+        return UnsafePointer(to=self.data)
 
     # ===--------------------------------------------------------------------===#
     # Retrieve attributes
@@ -203,7 +209,7 @@ struct Matrix[dtype: DType](
     ) raises -> MatrixView[dtype = Self.dtype, origin = origin_of(self.data)]:
         """Gets a view of the specified row with a slice of columns."""
         return MatrixView(
-            data=self.data,
+            data=UnsafePointer(to=self.data),
             slice_x=x,
             slice_y=y,
             initial_nrows=self.nrows,
@@ -231,13 +237,13 @@ struct Matrix[dtype: DType](
             indices_within_bounds(row, col, self.nrows, self.ncols),
             "Debug assertion failed: Indices out of bounds in `unsafe_load`",
         )
-        var offset = get_offset(row, col, self.row_stride, self.col_stride)
+        var offset = get_offset(row, col, self.row_stride, self.col_stride, 0)
         return (self.data._data + offset)[]
 
     fn view(self) -> MatrixView[Self.dtype, origin_of(self.data)]:
         """Gets a view of the entire matrix."""
         return MatrixView(
-            data=self.data,
+            data=UnsafePointer(to=self.data),
             slice_x=Slice(0, self.nrows, 1),
             slice_y=Slice(0, self.ncols, 1),
             initial_nrows=self.nrows,

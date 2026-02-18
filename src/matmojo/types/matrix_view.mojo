@@ -24,7 +24,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
     comptime ElementType = Scalar[Self.dtype]
     """The type of the elements in the matrix view, derived from the dtype."""
 
-    var data: Span[Self.ElementType, Self.origin]
+    var data: UnsafePointer[List[Self.ElementType], Self.origin]
     """A span representing the data of the matrix view."""
     var nrows: Int
     """The number of rows in the matrix view."""
@@ -36,6 +36,12 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
     """The column stride of the matrix view."""
     var offset: Int
     """The offset in the base matrix data where the view starts."""
+
+    fn get_data_ptr(
+        self,
+    ) -> UnsafePointer[List[Self.ElementType], Self.origin]:
+        """Returns a pointer to the underlying data buffer of the matrix."""
+        return self.data
 
     # ===--------------------------------------------------------------------===#
     # Retrieve attributes
@@ -70,7 +76,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
 
     fn __init__(
         out self,
-        data: Span[Self.ElementType, Self.origin],
+        data: UnsafePointer[List[Self.ElementType], Self.origin],
         *,
         nrows: Int,
         ncols: Int,
@@ -97,7 +103,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
 
     fn __init__(
         out self,
-        data: Span[Self.ElementType, Self.origin],
+        data: UnsafePointer[List[Self.ElementType], Self.origin],
         *,
         slice_x: Slice,
         slice_y: Slice,
@@ -129,7 +135,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         """Accesses an element of the matrix view using row and column indices.
         """
         var index = self.offset + row * self.row_stride + col * self.col_stride
-        return self.data[index]
+        return self.data[][index]
 
     # [Mojo Miji]
     # The return type can also be written as:
@@ -172,7 +178,7 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         var offset = get_offset(
             row, col, self.row_stride, self.col_stride, self.offset
         )
-        return self.data[offset]
+        return self.data[][offset]
 
     # ===--------------------------------------------------------------------===#
     # String Representation and Writing

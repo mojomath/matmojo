@@ -3,6 +3,13 @@ trait MatrixLike(Copyable):
     for matrix operations.
     """
 
+    fn get_data_ptr(
+        self,
+    ) -> UnsafePointer[List[Float64], Self.origin]:
+        """Returns a pointer to the underlying data buffer of the matrix-like
+        object."""
+        ...
+
     fn get_nrows(self) -> Int:
         """Returns the number of rows in the matrix-like object."""
         ...
