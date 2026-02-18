@@ -8,4 +8,4 @@ from matmojo.routines.creation import (
     identity,
     diag,
 )
-from matmojo.routines.linalg import transpose, trace
+from matmojo.routines.linalg import transpose, trace, lu, cholesky, qr

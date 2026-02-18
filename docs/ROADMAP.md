@@ -1,8 +1,8 @@
 # Roadmap <!-- omit in toc -->
 
-MatMojo development roadmap. Phases are prioritized for use as the linear algebra foundation of [stamojo](https://github.com/forfudan/stamojo) (a statistical modeling library, similar to statsmodels).
+MatMojo development roadmap. Phases are prioritized for use as the linear algebra foundation of [stamojo](https://github.com/mojomath/stamojo) (a statistical modeling library, similar to statsmodels).
 
-Last reviewed: **2025-07-11**
+Last reviewed: **2026-02-19**
 
 - [Phase 0 — Core Types \& Basic Operations](#phase-0--core-types--basic-operations)
 - [Phase 1 — Matrix Fundamentals](#phase-1--matrix-fundamentals)
@@ -50,22 +50,22 @@ Last reviewed: **2025-07-11**
 | `trace()`                                                          | `routines/linalg.mojo`   | Matrix diagnostics                  | ✅      |
 | `zeros()` / `ones()` / `full()`                                    | `routines/creation.mojo` | Convenience constructors            | ✅      |
 | Element-wise ops for dynamic `Matrix` (`add`, `sub`, `mul`, `div`) | `routines/math.mojo`     | Residual computation                | ✅      |
-| Scalar–matrix operations (`scalar_add/sub/mul/div`)                 | `routines/math.mojo`     | Scaling, centering                  | ✅      |
+| Scalar–matrix operations (`scalar_add/sub/mul/div`)                | `routines/math.mojo`     | Scaling, centering                  | ✅      |
 | Operator overloads (`+`, `-`, `*`, `/`) for dynamic `Matrix`       | `types/matrix.mojo`      | Ergonomic element-wise syntax       | ✅      |
 
 ---
 
 ## Phase 2 — Decompositions
 
-> **Status: 🔲 Not started**
+> **Status: ✅ Done**
 >
 > *stamojo dependency: blocking — cannot implement OLS, GLS, or WLS without these.*
 
-| Item                                     | Module                 | stamojo use                                                 |
-| ---------------------------------------- | ---------------------- | ----------------------------------------------------------- |
-| LU decomposition (with partial pivoting) | `routines/linalg.mojo` | `solve()`, `inv()`, `det()`                                 |
-| Cholesky decomposition                   | `routines/linalg.mojo` | Efficient solve for positive-definite (covariance) matrices |
-| QR decomposition (Householder)           | `routines/linalg.mojo` | Numerically stable least squares (OLS)                      |
+| Item                                     | Module                 | stamojo use                                                 | Status |
+| ---------------------------------------- | ---------------------- | ----------------------------------------------------------- | ------ |
+| LU decomposition (with partial pivoting) | `routines/linalg.mojo` | `solve()`, `inv()`, `det()`                                 | ✅      |
+| Cholesky decomposition                   | `routines/linalg.mojo` | Efficient solve for positive-definite (covariance) matrices | ✅      |
+| QR decomposition (Householder)           | `routines/linalg.mojo` | Numerically stable least squares (OLS)                      | ✅      |
 
 ---
 
@@ -159,7 +159,8 @@ Last reviewed: **2025-07-11**
 
 ## Review Log
 
-| Date       | Reviewer | Notes                                      |
-| ---------- | -------- | ------------------------------------------ |
-| 2026-02-18 | ZHU      | Initial roadmap created. Phase 0 complete. |
+| Date       | Reviewer | Notes                                                                                  |
+| ---------- | -------- | -------------------------------------------------------------------------------------- |
+| 2026-02-18 | ZHU      | Initial roadmap created. Phase 0 complete.                                             |
 | 2025-07-11 | ZHU      | Phase 1 complete: creation, linalg, elementwise & scalar ops, dunders. 88 tests total. |
+| 2026-02-19 | ZHU      | Phase 2 complete: LU (partial pivoting), Cholesky, QR (Householder). 20 new tests.     |
