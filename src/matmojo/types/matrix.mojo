@@ -60,7 +60,7 @@ struct Matrix[dtype: DType](
     # compile time. This also applies to the strides.
     #
     # CORE ATTRIBUTES
-    var data: List[Scalar[Self.dtype]]
+    var data: List[Self.ElementType]
     """The elements of the matrix stored in a contiguous block of memory."""
     var nrows: Int
     """The number of rows in the matrix."""
@@ -74,6 +74,10 @@ struct Matrix[dtype: DType](
     # ===--------------------------------------------------------------------===#
     # Retrieve attributes
     # ===--------------------------------------------------------------------===#
+    fn get_data(self) -> Span[Self.ElementType, origin_of(self.data)]:
+        """Returns the underlying data of the matrix."""
+        return Span(self.data)
+
     fn get_nrows(self) -> Int:
         """Returns the number of rows in the matrix."""
         return self.nrows

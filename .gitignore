@@ -2,7 +2,6 @@
 # pixi environments
 .pixi
 *.egg-info
-pixi.lock
 
 # MacOS
 .DS_Store
@@ -20,5 +19,5 @@ kgen.trace.*
 
 # Local files
 local
-test*.mojo
-temp*.mojo
+/test*.mojo
+/temp*.mojo

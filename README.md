@@ -90,24 +90,38 @@ matmojo
 │       ├── prelude.mojo
 │       ├── types/
 │       │   ├── __init__.mojo
-│       │   ├── matrix.mojo
-│       │   ├── matrix_view.mojo
+│       │   ├── matrix.mojo          # Dynamic Matrix (owns data)
+│       │   ├── matrix_view.mojo     # Non-owning view on Matrix
+│       │   ├── static_matrix.mojo   # Compile-time sized Matrix
 │       │   └── errors.mojo
 │       ├── routines/
 │       │   ├── __init__.mojo
-│       │   ├── creation.mojo
-│       │   ├── math.mojo
-│       │   ├── linalg.mojo
-│       │   ├── random.mojo
-│       │   └── statistics.mojo
+│       │   ├── creation.mojo        # matrix(), smatrix() constructors
+│       │   ├── math.mojo            # add, sub, mul, div, matmul
+│       │   ├── linalg.mojo          # (planned) decompositions, solvers
+│       │   ├── random.mojo          # (planned) random matrix generation
+│       │   └── statistics.mojo      # (planned) mean, var, cov, etc.
+│       ├── traits/
+│       │   ├── __init__.mojo
+│       │   └── matrix_like.mojo     # MatrixLike trait
 │       └── utils/
 │           ├── __init__.mojo
-│           ├── io.mojo
+│           ├── indexing.mojo
 │           ├── str.mojo
-│           └── validation.mojo
+│           └── io.mojo              # (planned)
 └── tests
-    ├── matmojo.mojopkg
-    └── test.mojo
+    ├── test_all.sh
+    ├── matrix/
+    │   ├── test_matrix_creation.mojo
+    │   ├── test_matrix_indexing.mojo
+    │   ├── test_matrix_lifecycle.mojo
+    │   └── test_matrix_str.mojo
+    ├── matrix_view/
+    │   └── test_matrix_view.mojo
+    ├── static_matrix/
+    │   └── test_static_matrix.mojo
+    └── routines/
+        └── test_math.mojo
 ```
 
 ## Status

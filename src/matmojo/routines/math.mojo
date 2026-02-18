@@ -20,12 +20,12 @@ from matmojo.traits.matrix_like import MatrixLike
 # Matrix addition
 # ===---------------------------------------------------------------------- ===#
 
+
 # FIXME: When Mojo support parameterized traits.
 # fn add[M: MatrixLike](a: M, b: M) raises ValueError -> M:
 #     """Performs element-wise addition of two matrices.
 
 #     Parameters:
-#         dtype: The data type of the matrix elements.
 #         M: The type of the input matrices, which must implement the MatrixLike trait.
 
 #     Args:
@@ -49,7 +49,7 @@ from matmojo.traits.matrix_like import MatrixLike
 #     for i in range(a.get_nrows()):
 #         for j in range(a.get_ncols()):
 #             result[i, j] = a[i, j] + b[i, j]
-#     return result
+#     return result^
 
 
 fn add[

@@ -40,6 +40,11 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
     # ===--------------------------------------------------------------------===#
     # Retrieve attributes
     # ===--------------------------------------------------------------------===#
+
+    fn get_data(self) -> Span[Self.ElementType, Self.origin]:
+        """Returns the underlying data of the matrix."""
+        return self.data
+
     fn get_nrows(self) -> Int:
         """Returns the number of rows in the matrix."""
         return self.nrows
