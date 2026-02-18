@@ -2,7 +2,7 @@
 
 A matrix and numeric computing library for Mojo.
 
-**[Docs](docs/index.md)** | **[Miji: Design](https://mojo-lang.com/miji/apply/design.html)** | **[Miji: Make it work](https://mojo-lang.com/miji/apply/work.html)**
+**[Docs](docs/index.md)** | **[Roadmap](docs/ROADMAP.md)** | **[Miji: Design](https://mojo-lang.com/miji/apply/design.html)** | **[Miji: Make it work](https://mojo-lang.com/miji/apply/work.html)**
 
 - [Overview](#overview)
 - [Goals](#goals)
@@ -126,7 +126,7 @@ matmojo
 
 ## Status
 
-MatMojo is under active development as a tutorial companion project. Issues and suggestions are welcome.
+MatMojo is under active development as a tutorial companion project. See the [Roadmap](docs/ROADMAP.md) for planned features and progress tracking. Issues and suggestions are welcome.
 
 ## License
 
