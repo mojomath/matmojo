@@ -101,8 +101,8 @@ fn _test_qr_square(np: PythonObject, n: Int) raises:
     var a_np = np.random.rand(n, n)
     var a = matrix_from_numpy(a_np)
     var result = qr(a)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
     var QR = matmul(Q, R)
     assert_matrices_close(
         a,
@@ -117,8 +117,8 @@ fn _test_qr_tall(np: PythonObject, m: Int, n: Int) raises:
     var a_np = np.random.rand(m, n)
     var a = matrix_from_numpy(a_np)
     var result = qr(a)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
     var QR = matmul(Q, R)
     assert_matrices_close(
         a,
@@ -133,7 +133,7 @@ fn _test_qr_orthogonality(np: PythonObject, n: Int) raises:
     var a_np = np.random.rand(n, n)
     var a = matrix_from_numpy(a_np)
     var result = qr(a)
-    var Q = result[0].copy()
+    ref Q = result[0]
     var Qt = transpose(Q)
     var QtQ = matmul(Qt, Q)
     var I = eye[DType.float64](n)
@@ -188,9 +188,9 @@ fn test_lu_random_small() raises:
         var a_np = np.random.rand(4, 4) + np.eye(4) * 0.1
         var a = matrix_from_numpy(a_np)
         var result = lu(a)
-        var L = result[0].copy()
-        var U = result[1].copy()
-        var piv = result[2].copy()
+        ref L = result[0]
+        ref U = result[1]
+        ref piv = result[2]
         var PA = _permute_rows_mm(a, piv)
         var LU_result = matmul(L, U)
         assert_matrices_close(PA, LU_result, msg="LU 4x4", atol=1e-10)
@@ -202,9 +202,9 @@ fn test_lu_random_medium() raises:
     var a_np = np.random.rand(10, 10) + np.eye(10) * 0.1
     var a = matrix_from_numpy(a_np)
     var result = lu(a)
-    var L = result[0].copy()
-    var U = result[1].copy()
-    var piv = result[2].copy()
+    ref L = result[0]
+    ref U = result[1]
+    ref piv = result[2]
     var PA = _permute_rows_mm(a, piv)
     var LU_result = matmul(L, U)
     assert_matrices_close(PA, LU_result, msg="LU 10x10", atol=1e-9)

@@ -331,18 +331,49 @@ struct Matrix[dtype: DType](
         """Performs element-wise addition of two matrices."""
         return matmojo.routines.math.add(self, other)
 
+    fn __add__[
+        origin: Origin
+    ](self, other: MatrixView[Self.dtype, origin]) raises -> Self:
+        """Performs element-wise addition of a matrix and a matrix view."""
+        return matmojo.routines.math.add(self, other)
+
     fn __sub__(self, other: Self) raises -> Self:
         """Performs element-wise subtraction of two matrices."""
+        return matmojo.routines.math.sub(self, other)
+
+    fn __sub__[
+        origin: Origin
+    ](self, other: MatrixView[Self.dtype, origin]) raises -> Self:
+        """Performs element-wise subtraction of a matrix and a matrix view."""
         return matmojo.routines.math.sub(self, other)
 
     fn __mul__(self, other: Self) raises -> Self:
         """Performs element-wise multiplication of two matrices."""
         return matmojo.routines.math.mul(self, other)
 
+    fn __mul__[
+        origin: Origin
+    ](self, other: MatrixView[Self.dtype, origin]) raises -> Self:
+        """Performs element-wise multiplication of a matrix and a matrix view.
+        """
+        return matmojo.routines.math.mul(self, other)
+
     fn __truediv__(self, other: Self) raises -> Self:
         """Performs element-wise division of two matrices."""
         return matmojo.routines.math.div(self, other)
 
+    fn __truediv__[
+        origin: Origin
+    ](self, other: MatrixView[Self.dtype, origin]) raises -> Self:
+        """Performs element-wise division of a matrix and a matrix view."""
+        return matmojo.routines.math.div(self, other)
+
     fn __matmul__(self, other: Self) raises ValueError -> Self:
         """Performs matrix multiplication of two matrices."""
+        return matmojo.routines.math.matmul(self, other)
+
+    fn __matmul__[
+        origin: Origin
+    ](self, other: MatrixView[Self.dtype, origin]) raises ValueError -> Self:
+        """Performs matrix multiplication of a matrix and a matrix view."""
         return matmojo.routines.math.matmul(self, other)

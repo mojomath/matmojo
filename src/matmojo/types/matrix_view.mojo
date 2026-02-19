@@ -3,6 +3,7 @@ This module defines the `MatrixView` type, which is a view on a `Matrix`.
 """
 
 import math as builtin_math
+import matmojo.routines.math
 
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.types.matrix import Matrix
@@ -256,3 +257,70 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
                 writer.write("\n")
             else:
                 writer.write("]\n")
+
+    # ===--------------------------------------------------------------------===#
+    # Basic math dunders
+    # ===--------------------------------------------------------------------===#
+
+    fn __add__[
+        origin_b: Origin
+    ](self, other: MatrixView[Self.dtype, origin_b]) raises -> Matrix[
+        Self.dtype
+    ]:
+        """Performs element-wise addition of two matrix views."""
+        return matmojo.routines.math.add(self, other)
+
+    fn __add__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+        """Performs element-wise addition of a matrix view and a matrix."""
+        return matmojo.routines.math.add(self, other)
+
+    fn __sub__[
+        origin_b: Origin
+    ](self, other: MatrixView[Self.dtype, origin_b]) raises -> Matrix[
+        Self.dtype
+    ]:
+        """Performs element-wise subtraction of two matrix views."""
+        return matmojo.routines.math.sub(self, other)
+
+    fn __sub__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+        """Performs element-wise subtraction of a matrix view and a matrix."""
+        return matmojo.routines.math.sub(self, other)
+
+    fn __mul__[
+        origin_b: Origin
+    ](self, other: MatrixView[Self.dtype, origin_b]) raises -> Matrix[
+        Self.dtype
+    ]:
+        """Performs element-wise multiplication of two matrix views."""
+        return matmojo.routines.math.mul(self, other)
+
+    fn __mul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+        """Performs element-wise multiplication of a matrix view and a matrix.
+        """
+        return matmojo.routines.math.mul(self, other)
+
+    fn __truediv__[
+        origin_b: Origin
+    ](self, other: MatrixView[Self.dtype, origin_b]) raises -> Matrix[
+        Self.dtype
+    ]:
+        """Performs element-wise division of two matrix views."""
+        return matmojo.routines.math.div(self, other)
+
+    fn __truediv__(
+        self, other: Matrix[Self.dtype]
+    ) raises -> Matrix[Self.dtype]:
+        """Performs element-wise division of a matrix view and a matrix."""
+        return matmojo.routines.math.div(self, other)
+
+    fn __matmul__[
+        origin_b: Origin
+    ](self, other: MatrixView[Self.dtype, origin_b]) raises -> Matrix[
+        Self.dtype
+    ]:
+        """Performs matrix multiplication of two matrix views."""
+        return matmojo.routines.math.matmul(self, other)
+
+    fn __matmul__(self, other: Matrix[Self.dtype]) raises -> Matrix[Self.dtype]:
+        """Performs matrix multiplication of a matrix view and a matrix."""
+        return matmojo.routines.math.matmul(self, other)

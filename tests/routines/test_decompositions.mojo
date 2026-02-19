@@ -77,9 +77,9 @@ fn test_lu_basic() raises:
         [[2.0, 3.0, 1.0], [4.0, 7.0, 5.0], [6.0, 18.0, 22.0]]
     )
     var result = lu(a)
-    var L = result[0].copy()
-    var U = result[1].copy()
-    var piv = result[2].copy()
+    ref L = result[0]
+    ref U = result[1]
+    ref piv = result[2]
 
     # Verify PA == LU.
     var PA = permute_rows(a, piv)
@@ -91,8 +91,8 @@ fn test_lu_identity() raises:
     """LU of identity should give L=I, U=I."""
     var a = mm.eye[DType.float64](3)
     var result = lu(a)
-    var L = result[0].copy()
-    var U = result[1].copy()
+    ref L = result[0]
+    ref U = result[1]
 
     var I = mm.eye[DType.float64](3)
     assert_matrix_close(L, I)
@@ -103,9 +103,9 @@ fn test_lu_2x2() raises:
     """Test LU on a simple 2x2 matrix."""
     var a = mm.matrix[DType.float64]([[4.0, 3.0], [6.0, 3.0]])
     var result = lu(a)
-    var L = result[0].copy()
-    var U = result[1].copy()
-    var piv = result[2].copy()
+    ref L = result[0]
+    ref U = result[1]
+    ref piv = result[2]
 
     var PA = permute_rows(a, piv)
     var LU = matmul(L, U)
@@ -118,7 +118,7 @@ fn test_lu_lower_triangular() raises:
         [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]]
     )
     var result = lu(a)
-    var L = result[0].copy()
+    ref L = result[0]
 
     for i in range(L.nrows):
         # Diagonal must be 1.
@@ -134,7 +134,7 @@ fn test_lu_upper_triangular() raises:
         [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]]
     )
     var result = lu(a)
-    var U = result[1].copy()
+    ref U = result[1]
 
     for i in range(U.nrows):
         for j in range(i):
@@ -156,9 +156,9 @@ fn test_lu_col_major() raises:
     """LU should work on column-major matrices."""
     var a = mm.matrix[DType.float64]([[2.0, 1.0], [5.0, 3.0]], order="F")
     var result = lu(a)
-    var L = result[0].copy()
-    var U = result[1].copy()
-    var piv = result[2].copy()
+    ref L = result[0]
+    ref U = result[1]
+    ref piv = result[2]
 
     var PA = permute_rows(a, piv)
     var LU = matmul(L, U)
@@ -254,8 +254,8 @@ fn test_qr_basic() raises:
         [[1.0, -1.0, 4.0], [1.0, 4.0, -2.0], [1.0, 4.0, 2.0]]
     )
     var result = qr(a)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
 
     # Verify A == Q @ R.
     var QR = matmul(Q, R)
@@ -266,7 +266,7 @@ fn test_qr_orthogonal_q() raises:
     """Q should be orthogonal: Q^T Q = I."""
     var a = mm.matrix[DType.float64]([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     var result = qr(a)
-    var Q = result[0].copy()
+    ref Q = result[0]
 
     # Q^T @ Q should be identity (m x m).
     var Qt = transpose(Q)
@@ -281,7 +281,7 @@ fn test_qr_upper_triangular_r() raises:
         [[12.0, -51.0, 4.0], [6.0, 167.0, -68.0], [-4.0, 24.0, -41.0]]
     )
     var result = qr(a)
-    var R = result[1].copy()
+    ref R = result[1]
 
     for i in range(R.nrows):
         for j in range(min(i, R.ncols)):
@@ -306,8 +306,8 @@ fn test_qr_identity() raises:
     """QR of identity: Q @ R should equal I."""
     var I = mm.eye[DType.float64](3)
     var result = qr(I)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
 
     var QR = matmul(Q, R)
     assert_matrix_close(QR, I, tol=1e-10)
@@ -317,8 +317,8 @@ fn test_qr_rectangular() raises:
     """QR decomposition for a tall rectangular matrix (m > n)."""
     var a = mm.matrix[DType.float64]([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     var result = qr(a)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
 
     testing.assert_equal(Q.nrows, 3)
     testing.assert_equal(Q.ncols, 3)
@@ -346,8 +346,8 @@ fn test_qr_col_major() raises:
         [[1.0, -1.0, 4.0], [1.0, 4.0, -2.0], [1.0, 4.0, 2.0]], order="F"
     )
     var result = qr(a)
-    var Q = result[0].copy()
-    var R = result[1].copy()
+    ref Q = result[0]
+    ref R = result[1]
     var QR = matmul(Q, R)
     assert_matrix_close(a, QR, tol=1e-9)
 

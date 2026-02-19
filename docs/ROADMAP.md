@@ -71,16 +71,16 @@ Last reviewed: **2026-02-19**
 
 ## Phase 3 — Solvers & Inverse
 
-> **Status: 🔲 Not started**
+> **Status: ✅ Done**
 >
 > *stamojo dependency: blocking — regression coefficients require `solve` or `inv`.*
 
-| Item                               | Module                 | stamojo use            |
-| ---------------------------------- | ---------------------- | ---------------------- |
-| `inv()` — matrix inverse           | `routines/linalg.mojo` | β̂ = (X^T X)^{-1} X^T y |
-| `solve()` — solve Ax = b           | `routines/linalg.mojo` | Linear system solving  |
-| `det()` — determinant (via LU)     | `routines/linalg.mojo` | Singularity check      |
-| `lstsq()` — least squares (via QR) | `routines/linalg.mojo` | OLS regression         |
+| Item                               | Module                 | stamojo use            | Status |
+| ---------------------------------- | ---------------------- | ---------------------- | ------ |
+| `det()` — determinant (via LU)     | `routines/linalg.mojo` | Singularity check      | ✅      |
+| `solve()` — solve Ax = b           | `routines/linalg.mojo` | Linear system solving  | ✅      |
+| `inv()` — matrix inverse           | `routines/linalg.mojo` | β̂ = (X^T X)^{-1} X^T y | ✅      |
+| `lstsq()` — least squares (via QR) | `routines/linalg.mojo` | OLS regression         | ✅      |
 
 ---
 
