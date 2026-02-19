@@ -8,6 +8,7 @@ from sys import simd_width_of
 from matmojo.types.errors import ValueError
 from matmojo.types.static_matrix import StaticMatrix
 from matmojo.types.matrix import Matrix
+from matmojo.types.matrix_view import MatrixView
 from matmojo.traits.matrix_like import MatrixLike
 from matmojo.utils.indexing import get_offset
 
@@ -146,19 +147,36 @@ fn matmul[
     return result^
 
 
-fn matmul[
-    dtype: DType
-](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
-    """Performs matrix multiplication of two matrices.
+# --------------------------------------------------------------------------- #
+# Core view-based matmul implementation
+# --------------------------------------------------------------------------- #
+# [Mojo Miji]
+# The canonical SIMD-optimised matmul operates on MatrixView.
+# Converting Matrix → MatrixView via `.view()` is free (metadata copy only;
+# the underlying data lives in a Span that borrows from the Matrix's List).
+# This avoids duplicating the implementation for every Matrix/View combination.
 
-    Args:
-        a: The first input matrix.
-        b: The second input matrix.
 
-    Returns:
-        A new matrix containing the product of a and b.
+fn _matmul_view_simd[
+    dtype: DType,
+    origin_a: Origin,
+    origin_b: Origin,
+](
+    a: MatrixView[dtype, origin_a],
+    b: MatrixView[dtype, origin_b],
+) raises ValueError -> Matrix[dtype]:
+    """Core matrix multiplication on MatrixView operands.
+
+    Dispatches to:
+    * **SIMD fast-path** – when both operands are C-contiguous
+      (vectorize across b's columns + parallelize over a's rows).
+    * **General fallback** – stride-aware scalar access, parallelize over rows.
+      Handles arbitrary memory layouts (non-contiguous views, sliced views, etc.).
+
+    The result is always a freshly allocated, C-contiguous Matrix.
     """
-    comptime simd_width_of_dtype = simd_width_of[dtype]()
+    comptime simd_w = simd_width_of[dtype]()
+
     if a.ncols != b.nrows:
         raise ValueError(
             file="src/matmojo/routines/math.mojo",
@@ -170,39 +188,168 @@ fn matmul[
             previous_error=None,
         )
 
-    # a and b are both row-major
-    var result = Matrix[dtype](a.nrows, b.ncols, b.ncols, 1)  # row-major
+    var M = a.nrows
+    var N = b.ncols
+    var K = a.ncols
 
-    @parameter
-    fn closure_a_rows(row_a: Int):
-        for inner in range(a.ncols):
-            # [Mojo Miji]
-            # Use each element in a certain row of a to mutiply the whole row
-            # of b, and accumulate the results in the corresponding row of result.
-            @parameter
-            fn closure_b_cols[
-                simd_width: Int
-            ](col_b: Int) unified {
-                mut result, read a, read b, read row_a, read inner
-            }:
-                result.data._data.store[width=simd_width](
-                    row_a * result.row_stride + col_b * result.col_stride,
-                    result.data._data.load[width=simd_width](
-                        row_a * result.row_stride + col_b * result.col_stride
+    # Result is always C-contiguous (row-major).
+    var result = Matrix[dtype](M, N, N, 1)
+
+    # ---------------------------------------------------------------------- #
+    # Fast path: both a and b are C-contiguous → SIMD vectorize + parallelize
+    # ---------------------------------------------------------------------- #
+    if a.is_c_contiguous() and b.is_c_contiguous():
+        # Obtain raw pointers for SIMD load/store.
+        # Span.unsafe_ptr() gives the UnsafePointer to the start of the
+        # underlying buffer; `offset` advances to the view's first element.
+        var a_ptr = a.data.unsafe_ptr()
+        var b_ptr = b.data.unsafe_ptr()
+        var a_off = a.offset
+        var b_off = b.offset
+        var a_rs = a.row_stride
+        var b_rs = b.row_stride
+
+        @parameter
+        fn process_row(i: Int):
+            for k in range(K):
+                # [Mojo Miji]
+                # Use each element in row i of a to multiply the whole row k
+                # of b, and accumulate into row i of result.
+                @parameter
+                fn vec_col[
+                    w: Int
+                ](j: Int) unified {
+                    mut result,
+                    read a_ptr,
+                    read b_ptr,
+                    read a_off,
+                    read b_off,
+                    read a_rs,
+                    read b_rs,
+                    read N,
+                    read i,
+                    read k,
+                }:
+                    var r_idx = i * N + j
+                    result.data._data.store[width=w](
+                        r_idx,
+                        result.data._data.load[width=w](r_idx)
+                        + a_ptr.load[width=1](a_off + i * a_rs + k)
+                        * b_ptr.load[width=w](b_off + k * b_rs + j),
                     )
-                    + a.data._data.load[width=1](
-                        row_a * a.row_stride + inner * a.col_stride
+
+                vectorize[simd_w](N, vec_col)
+
+        parallelize[process_row](M, M)
+
+    # ---------------------------------------------------------------------- #
+    # General fallback: any memory layout (strided, sliced, transposed…)
+    # ---------------------------------------------------------------------- #
+    else:
+        var a_off = a.offset
+        var b_off = b.offset
+        var a_rs = a.row_stride
+        var a_cs = a.col_stride
+        var b_rs = b.row_stride
+        var b_cs = b.col_stride
+
+        @parameter
+        fn process_row_general(i: Int):
+            for j in range(N):
+                var sum: Scalar[dtype] = 0
+                for k in range(K):
+                    sum += (
+                        a.data[a_off + i * a_rs + k * a_cs]
+                        * b.data[b_off + k * b_rs + j * b_cs]
                     )
-                    * b.data._data.load[width=simd_width](
-                        inner * b.row_stride + col_b * b.col_stride
-                    ),
-                )
+                result.data._data.store[width=1](i * N + j, sum)
 
-            vectorize[simd_width_of_dtype](b.ncols, closure_b_cols)
-
-    parallelize[closure_a_rows](a.nrows, a.nrows)
+        parallelize[process_row_general](M, M)
 
     return result^
+
+
+# --------------------------------------------------------------------------- #
+# Public matmul overloads
+# --------------------------------------------------------------------------- #
+
+
+fn matmul[
+    dtype: DType
+](a: Matrix[dtype], b: Matrix[dtype]) raises ValueError -> Matrix[dtype]:
+    """Performs matrix multiplication of two dynamic matrices.
+
+    Delegates to the SIMD-optimised, view-based core implementation.
+    Converting Matrix → MatrixView via `.view()` is free (metadata copy).
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix.
+
+    Returns:
+        A new C-contiguous matrix containing the product of a and b.
+    """
+    return _matmul_view_simd(a.view(), b.view())
+
+
+fn matmul[
+    dtype: DType,
+    origin_a: Origin,
+    origin_b: Origin,
+](
+    a: MatrixView[dtype, origin_a],
+    b: MatrixView[dtype, origin_b],
+) raises ValueError -> Matrix[dtype]:
+    """Performs matrix multiplication of two matrix views.
+
+    This is the canonical entry-point for view × view multiplication.
+
+    Args:
+        a: The first input matrix view.
+        b: The second input matrix view.
+
+    Returns:
+        A new C-contiguous matrix containing the product of a and b.
+    """
+    return _matmul_view_simd(a, b)
+
+
+fn matmul[
+    dtype: DType,
+    origin_b: Origin,
+](
+    a: Matrix[dtype],
+    b: MatrixView[dtype, origin_b],
+) raises ValueError -> Matrix[dtype]:
+    """Performs matrix multiplication of a matrix and a matrix view.
+
+    Args:
+        a: The first input matrix.
+        b: The second input matrix view.
+
+    Returns:
+        A new C-contiguous matrix containing the product of a and b.
+    """
+    return _matmul_view_simd(a.view(), b)
+
+
+fn matmul[
+    dtype: DType,
+    origin_a: Origin,
+](
+    a: MatrixView[dtype, origin_a],
+    b: Matrix[dtype],
+) raises ValueError -> Matrix[dtype]:
+    """Performs matrix multiplication of a matrix view and a matrix.
+
+    Args:
+        a: The first input matrix view.
+        b: The second input matrix.
+
+    Returns:
+        A new C-contiguous matrix containing the product of a and b.
+    """
+    return _matmul_view_simd(a, b.view())
 
 
 # ===---------------------------------------------------------------------- ===#
