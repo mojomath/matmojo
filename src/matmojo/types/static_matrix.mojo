@@ -122,9 +122,9 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         """Initializes the matrix with SIMD that match the size of buffer."""
         self.data = simd
 
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """Initializes the matrix by copying another matrix."""
-        self.data = other.data
+        self.data = copy.data
 
     # ===--------------------------------------------------------------------===#
     # Element Access and Mutation

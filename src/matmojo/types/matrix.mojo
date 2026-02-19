@@ -155,21 +155,21 @@ struct Matrix[dtype: DType](
         self.row_stride = row_stride
         self.col_stride = col_stride
 
-    fn __copyinit__(out self, other: Self):
+    fn __copyinit__(out self, copy: Self):
         """Initializes the matrix by copying another matrix."""
-        self.data = other.data.copy()
-        self.nrows = other.nrows
-        self.ncols = other.ncols
-        self.row_stride = other.row_stride
-        self.col_stride = other.col_stride
+        self.data = copy.data.copy()
+        self.nrows = copy.nrows
+        self.ncols = copy.ncols
+        self.row_stride = copy.row_stride
+        self.col_stride = copy.col_stride
 
-    fn __moveinit__(out self, deinit other: Self):
+    fn __moveinit__(out self, deinit take: Self):
         """Initializes the matrix by moving another matrix."""
-        self.data = other.data^
-        self.nrows = other.nrows
-        self.ncols = other.ncols
-        self.row_stride = other.row_stride
-        self.col_stride = other.col_stride
+        self.data = take.data^
+        self.nrows = take.nrows
+        self.ncols = take.ncols
+        self.row_stride = take.row_stride
+        self.col_stride = take.col_stride
 
     # ===--------------------------------------------------------------------===#
     # Element Access and Mutation

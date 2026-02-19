@@ -16,4 +16,5 @@ test = "bash ./tests/test_all.sh"
 format = "pixi run mojo format ./src && pixi run mojo format ./tests"
 
 [dependencies]
-mojo = "*"
+mojo = ">0.26.1"
+numpy = "*"
