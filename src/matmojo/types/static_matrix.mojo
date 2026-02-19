@@ -76,6 +76,22 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         """Returns the total number of elements in the matrix."""
         return self.nrows * self.ncols
 
+    fn is_c_contiguous(self) -> Bool:
+        """Returns True if the matrix is C-contiguous (row-major, dense).
+
+        StaticMatrix uses power-of-2 padding for SIMD alignment, so it is
+        only C-contiguous when ncols equals the padded buffer column length.
+        """
+        return self.col_stride == 1 and self.row_stride == self.ncols
+
+    fn is_f_contiguous(self) -> Bool:
+        """Returns True if the matrix is F-contiguous (column-major, dense).
+
+        StaticMatrix is always row-major with col_stride=1, so it is never
+        F-contiguous (unless it is a single row or column).
+        """
+        return self.row_stride == 1 and self.col_stride == self.nrows
+
     # ===--------------------------------------------------------------------===#
     # Life Cycle Management
     # ===--------------------------------------------------------------------===#

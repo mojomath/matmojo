@@ -28,6 +28,24 @@ trait MatrixLike(Copyable):
         """Returns the total number of elements in the matrix-like object."""
         ...
 
+    fn is_c_contiguous(self) -> Bool:
+        """Returns True if the data is stored in row-major (C) contiguous order.
+
+        A matrix is C-contiguous when `col_stride == 1` and
+        `row_stride == ncols`, meaning elements within a row are adjacent
+        in memory.
+        """
+        ...
+
+    fn is_f_contiguous(self) -> Bool:
+        """Returns True if the data is stored in column-major (Fortran) contiguous order.
+
+        A matrix is F-contiguous when `row_stride == 1` and
+        `col_stride == nrows`, meaning elements within a column are adjacent
+        in memory.
+        """
+        ...
+
     fn copy(self) -> Self:
         """Returns a copy of the matrix-like object."""
         ...

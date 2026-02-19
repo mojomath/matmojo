@@ -1,6 +1,6 @@
 # MatMojo <!-- omit in toc -->
 
-A matrix and numeric computing library for Mojo.
+A matrix and linear algebra library for Mojo.
 
 **[Docs](docs/index.md)** | **[Roadmap](docs/ROADMAP.md)** | **[Miji: Design](https://mojo-lang.com/miji/apply/design.html)** | **[Miji: Make it work](https://mojo-lang.com/miji/apply/work.html)**
 
@@ -8,6 +8,9 @@ A matrix and numeric computing library for Mojo.
 - [Goals](#goals)
 - [Install](#install)
 - [Quick start](#quick-start)
+  - [Create matrices](#create-matrices)
+  - [Arithmetic](#arithmetic)
+  - [Linear algebra](#linear-algebra)
 - [Project structure](#project-structure)
 - [Status](#status)
 - [License](#license)
@@ -57,26 +60,70 @@ pixi install
 
 ## Quick start
 
-Build the package and run the interactive test:
+Run the test suite:
 
 ```bash
 pixi run test
 ```
 
-Minimal usage example:
+### Create matrices
 
 ```mojo
+import matmojo as mm
+
 fn main() raises:
-    var mat = Matrix(
-        [
-            [1.1, 1.2, 1.3, 1.4, 1.5],
-            [2.1, 2.2, 2.3, 2.4, 2.5],
-            [3.1, 3.2, 3.3, 3.4, 3.5],
-            [4.1, 4.2, 4.3, 4.4, 4.5],
-            [5.1, 5.2, 5.3, 5.4, 5.5],
-        ]
+    # From nested lists
+    var A = mm.matrix[DType.float64](
+        [[1.0, 2.0, 3.0],
+         [4.0, 5.0, 6.0],
+         [7.0, 8.0, 9.0]]
     )
-    print(mat)
+    print(A)
+
+    # Convenience constructors
+    var I = mm.eye[DType.float64](3)       # 3×3 identity
+    var Z = mm.zeros[DType.float64](2, 4)  # 2×4 zeros
+    var O = mm.ones[DType.float64](3, 3)   # 3×3 ones
+```
+
+### Arithmetic
+
+```mojo
+    # Element-wise operators
+    var B = A + O   # addition
+    var C = A * A   # Hadamard product
+    var D = A @ A   # matrix multiplication
+
+    # Scalar operations
+    from matmojo.routines.math import scalar_mul
+    var scaled = scalar_mul(A, 2.0)
+```
+
+### Linear algebra
+
+```mojo
+    # Transpose & trace
+    var At = mm.transpose(A)
+    var t  = mm.trace(A)
+
+    # LU decomposition (PA = LU)
+    var lup = mm.lu(A)
+    var L   = lup[0].copy()
+    var U   = lup[1].copy()
+    var piv = lup[2].copy()
+
+    # Cholesky (A = LL^T, requires SPD matrix)
+    var spd = mm.matrix[DType.float64](
+        [[4.0, 12.0, -16.0],
+         [12.0, 37.0, -43.0],
+         [-16.0, -43.0, 98.0]]
+    )
+    var Lc = mm.cholesky(spd)
+
+    # QR decomposition (A = QR)
+    var qr_result = mm.qr(A)
+    var Q = qr_result[0].copy()
+    var R = qr_result[1].copy()
 ```
 
 ## Project structure
@@ -84,49 +131,39 @@ fn main() raises:
 ```sh
 matmojo
 ├── pixi.toml
-├── src
-│   └── matmojo
-│       ├── __init__.mojo
-│       ├── prelude.mojo
-│       ├── types/
-│       │   ├── __init__.mojo
-│       │   ├── matrix.mojo          # Dynamic Matrix (owns data)
-│       │   ├── matrix_view.mojo     # Non-owning view on Matrix
-│       │   ├── static_matrix.mojo   # Compile-time sized Matrix
-│       │   └── errors.mojo
-│       ├── routines/
-│       │   ├── __init__.mojo
-│       │   ├── creation.mojo        # matrix(), smatrix() constructors
-│       │   ├── math.mojo            # add, sub, mul, div, matmul
-│       │   ├── linalg.mojo          # (planned) decompositions, solvers
-│       │   ├── random.mojo          # (planned) random matrix generation
-│       │   └── statistics.mojo      # (planned) mean, var, cov, etc.
-│       ├── traits/
-│       │   ├── __init__.mojo
-│       │   └── matrix_like.mojo     # MatrixLike trait
-│       └── utils/
-│           ├── __init__.mojo
-│           ├── indexing.mojo
-│           ├── str.mojo
-│           └── io.mojo              # (planned)
-└── tests
+├── src/matmojo
+│   ├── __init__.mojo
+│   ├── types/
+│   │   ├── matrix.mojo          # Dynamic Matrix (row/col-major)
+│   │   ├── matrix_view.mojo     # Non-owning view with slicing
+│   │   ├── static_matrix.mojo   # Compile-time sized Matrix
+│   │   └── errors.mojo          # ValueError, IndexError, etc.
+│   ├── routines/
+│   │   ├── creation.mojo        # matrix, zeros, ones, full, eye, diag
+│   │   ├── math.mojo            # add, sub, mul, div, matmul, scalar ops
+│   │   └── linalg.mojo          # transpose, trace, lu, cholesky, qr
+│   ├── traits/
+│   │   └── matrix_like.mojo     # MatrixLike trait
+│   └── utils/
+│       ├── indexing.mojo
+│       └── str.mojo
+└── tests/
     ├── test_all.sh
-    ├── matrix/
-    │   ├── test_matrix_creation.mojo
-    │   ├── test_matrix_indexing.mojo
-    │   ├── test_matrix_lifecycle.mojo
-    │   └── test_matrix_str.mojo
-    ├── matrix_view/
-    │   └── test_matrix_view.mojo
-    ├── static_matrix/
-    │   └── test_static_matrix.mojo
-    └── routines/
-        └── test_math.mojo
+    ├── matrix/                   # Matrix creation, indexing, lifecycle, str
+    ├── matrix_view/              # View slicing, view-on-view
+    ├── static_matrix/            # StaticMatrix tests
+    └── routines/                 # creation, linalg, math, decompositions
 ```
 
 ## Status
 
-MatMojo is under active development as a tutorial companion project. See the [Roadmap](docs/ROADMAP.md) for planned features and progress tracking. Issues and suggestions are welcome.
+MatMojo is under active development. Current progress:
+
+- **Phase 0** ✅ Core types (`Matrix`, `StaticMatrix`, `MatrixView`), basic ops, CI
+- **Phase 1** ✅ Creation routines, transpose, trace, element-wise & scalar ops
+- **Phase 2** ✅ LU, Cholesky, QR decompositions
+
+See the [Roadmap](docs/ROADMAP.md) for upcoming phases (solvers, eigenvalues, statistics, etc.).
 
 ## License
 

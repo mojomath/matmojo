@@ -69,6 +69,14 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         """Returns the total number of elements in the matrix."""
         return self.nrows * self.ncols
 
+    fn is_c_contiguous(self) -> Bool:
+        """Returns True if the view is C-contiguous (row-major, dense)."""
+        return self.col_stride == 1 and self.row_stride == self.ncols
+
+    fn is_f_contiguous(self) -> Bool:
+        """Returns True if the view is F-contiguous (column-major, dense)."""
+        return self.row_stride == 1 and self.col_stride == self.nrows
+
     # ===--------------------------------------------------------------------===#
     # Life Cycle Management
     # ===--------------------------------------------------------------------===#
