@@ -167,11 +167,25 @@ fn _matmul_view_simd[
 ) raises ValueError -> Matrix[dtype]:
     """Core matrix multiplication on MatrixView operands.
 
-    Dispatches to:
-    * **SIMD fast-path** – when both operands are C-contiguous
-      (vectorize across b's columns + parallelize over a's rows).
-    * **General fallback** – stride-aware scalar access, parallelize over rows.
-      Handles arbitrary memory layouts (non-contiguous views, sliced views, etc.).
+    Dispatches to one of four SIMD-optimised paths based on the memory layout
+    of the two operands, falling back to a general stride-aware loop when
+    neither operand has contiguous rows or columns.
+
+    **Path 1 - B row-contiguous** (covers R×R, F×R, any×R):
+        Vectorize across B's row (SIMD load), parallelize over A's rows.
+        A is accessed element-wise with the generic offset formula.
+
+    **Path 2 - C×F** (A row-contiguous, B column-contiguous):
+        Each result element is a dot-product of a contiguous A-row and a
+        contiguous B-column.  SIMD vectorize the K loop with `reduce_add`.
+
+    **Path 3 - A column-contiguous** (covers F×F, F×weird):
+        Vectorize across A's column (SIMD load), accumulate in a temporary
+        contiguous column buffer, then scatter to the C-contiguous result.
+        Parallelize over B's columns.
+
+    **Path 4 - General fallback**:
+        Stride-aware scalar triple loop, parallelize over rows.
 
     The result is always a freshly allocated, C-contiguous Matrix.
     """
@@ -195,28 +209,31 @@ fn _matmul_view_simd[
     # Result is always C-contiguous (row-major).
     var result = Matrix[dtype](M, N, N, 1)
 
+    # Shared pointer setup – used by all SIMD paths.
+    var a_ptr = a.data.unsafe_ptr()
+    var b_ptr = b.data.unsafe_ptr()
+    var a_off = a.offset
+    var b_off = b.offset
+    var a_rs = a.row_stride
+    var a_cs = a.col_stride
+    var b_rs = b.row_stride
+    var b_cs = b.col_stride
+
     # ---------------------------------------------------------------------- #
-    # Fast path: both a and b are C-contiguous → SIMD vectorize + parallelize
+    # Path 1: B row-contiguous (col_stride == 1)
+    # Covers R×R, F×R, and any layout where B's rows are contiguous.
+    # Vectorize over B's columns + parallelize over A's rows.
     # ---------------------------------------------------------------------- #
-    if a.is_c_contiguous() and b.is_c_contiguous():
-        # Obtain raw pointers for SIMD load/store.
-        # Span.unsafe_ptr() gives the UnsafePointer to the start of the
-        # underlying buffer; `offset` advances to the view's first element.
-        var a_ptr = a.data.unsafe_ptr()
-        var b_ptr = b.data.unsafe_ptr()
-        var a_off = a.offset
-        var b_off = b.offset
-        var a_rs = a.row_stride
-        var b_rs = b.row_stride
+    if b.is_row_contiguous():
 
         @parameter
-        fn process_row(i: Int):
+        fn process_row_br(i: Int):
             for k in range(K):
                 # [Mojo Miji]
-                # Use each element in row i of a to multiply the whole row k
-                # of b, and accumulate into row i of result.
+                # Broadcast A[i,k] (scalar) and SIMD-multiply with row k of B,
+                # accumulating into row i of result.
                 @parameter
-                fn vec_col[
+                fn vec_col_br[
                     w: Int
                 ](j: Int) unified {
                     mut result,
@@ -225,6 +242,7 @@ fn _matmul_view_simd[
                     read a_off,
                     read b_off,
                     read a_rs,
+                    read a_cs,
                     read b_rs,
                     read N,
                     read i,
@@ -234,24 +252,98 @@ fn _matmul_view_simd[
                     result.data._data.store[width=w](
                         r_idx,
                         result.data._data.load[width=w](r_idx)
-                        + a_ptr.load[width=1](a_off + i * a_rs + k)
+                        + a_ptr.load[width=1](a_off + i * a_rs + k * a_cs)
                         * b_ptr.load[width=w](b_off + k * b_rs + j),
                     )
 
-                vectorize[simd_w](N, vec_col)
+                vectorize[simd_w](N, vec_col_br)
 
-        parallelize[process_row](M, M)
+        parallelize[process_row_br](M, M)
 
     # ---------------------------------------------------------------------- #
-    # General fallback: any memory layout (strided, sliced, transposed…)
+    # Path 2: A row-contiguous, B column-contiguous  (C × F)
+    # Both A's row and B's column are contiguous over the K dimension,
+    # so each result element is a SIMD dot-product with reduce_add.
+    # ---------------------------------------------------------------------- #
+    elif a.is_row_contiguous() and b.is_col_contiguous():
+
+        @parameter
+        fn process_row_cxf(i: Int):
+            for j in range(N):
+                var dot_sum: Scalar[dtype] = 0
+
+                @parameter
+                fn dot_k[
+                    w: Int
+                ](k: Int) unified {
+                    mut dot_sum,
+                    read a_ptr,
+                    read b_ptr,
+                    read a_off,
+                    read b_off,
+                    read a_rs,
+                    read b_cs,
+                    read i,
+                    read j,
+                }:
+                    dot_sum += (
+                        a_ptr.load[width=w](a_off + i * a_rs + k)
+                        * b_ptr.load[width=w](b_off + j * b_cs + k)
+                    ).reduce_add()
+
+                vectorize[simd_w](K, dot_k)
+                result.data._data.store[width=1](i * N + j, dot_sum)
+
+        parallelize[process_row_cxf](M, M)
+
+    # ---------------------------------------------------------------------- #
+    # Path 3: A column-contiguous  (covers F × F, F × weird)
+    # A's columns are contiguous → vectorize over rows of A.
+    # Accumulate in a temporary contiguous column buffer, then scatter to
+    # the C-contiguous result.  Parallelize over B's columns.
+    # ---------------------------------------------------------------------- #
+    elif a.is_col_contiguous():
+
+        @parameter
+        fn process_col_ff(j: Int):
+            # Temporary column buffer for SIMD accumulation.
+            var temp = List[Scalar[dtype]](length=M, fill=0)
+            var temp_ptr = temp._data
+
+            for k in range(K):
+                var b_kj = b_ptr.load[width=1](b_off + k * b_rs + j * b_cs)
+
+                @parameter
+                fn vec_rows_ff[
+                    w: Int
+                ](i: Int) unified {
+                    read temp_ptr,
+                    read a_ptr,
+                    read a_off,
+                    read a_cs,
+                    read b_kj,
+                    read k,
+                }:
+                    temp_ptr.store[width=w](
+                        i,
+                        temp_ptr.load[width=w](i)
+                        + a_ptr.load[width=w](a_off + k * a_cs + i) * b_kj,
+                    )
+
+                vectorize[simd_w](M, vec_rows_ff)
+
+            # Scatter temp column into result's column j.
+            for i in range(M):
+                result.data._data.store[width=1](
+                    i * N + j, temp_ptr.load[width=1](i)
+                )
+
+        parallelize[process_col_ff](N, N)
+
+    # ---------------------------------------------------------------------- #
+    # Path 4: General fallback – any memory layout
     # ---------------------------------------------------------------------- #
     else:
-        var a_off = a.offset
-        var b_off = b.offset
-        var a_rs = a.row_stride
-        var a_cs = a.col_stride
-        var b_rs = b.row_stride
-        var b_cs = b.col_stride
 
         @parameter
         fn process_row_general(i: Int):

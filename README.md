@@ -2,10 +2,11 @@
 
 A matrix and linear algebra library for Mojo.
 
-**[Docs](docs/index.md)** | **[Roadmap](docs/ROADMAP.md)** | **[Miji: Design](https://mojo-lang.com/miji/apply/design.html)** | **[Miji: Make it work](https://mojo-lang.com/miji/apply/work.html)**
+**[Roadmap](docs/ROADMAP.md)** | **[Mojo Miji](https://mojo-lang.com/miji/)** | **[Repository on GitHub»](https://github.com/mojomath/matmojo)** | **[Discord channel»](https://discord.gg/3rGH87uZTk)**
 
 - [Overview](#overview)
 - [Goals](#goals)
+- [Background](#background)
 - [Install](#install)
 - [Quick start](#quick-start)
   - [Create matrices](#create-matrices)
@@ -44,11 +45,15 @@ Below are some differences between **MatMojo** (this package) and **NuMojo** (a 
 
 The initial goal is to support [Mojo Miji](https://mojo-lang.com/miji/) practice content, focus on two-dimensional matrix computing, provide simple and intuitive syntax, and apply a series of targeted optimizations. Throughout the source code, detailed comments and explanations are provided, under the tag `[Mojo Miji]` to help readers understand the design decisions and implementation details.
 
-- Keep the API small and easy to read while learning Mojo.
+- Keep the API small and easy to read while learning Mojo and this package.
 - Provide simple and intuitive syntax for matrix creation and operations.
-- Use safe Mojo features and avoid unsafe code as much as possible.
+- Use **safe Mojo** features and avoid unsafe code as much as possible.
 - Emphasize contiguous storage for 2D matrices, but also support non-contiguous views through strides.
 - Optimize core operations like matrix multiplication which makes this package a better tool if you want to only use 2D matrices.
+
+## Background
+
+At the moment I am still building out the project scaffolding and solidifying the core functionality. Because Mojo has not yet reached v1.0, breaking changes are frequent across compiler releases, so **pull requests are not accepted at this time**. If you have any suggestions, questions, or feedback, please feel free to open an [issue](https://github.com/mojomath/stamojo/issues), start a [discussion](https://github.com/mojomath/stamojo/discussions), or reach out on our [Discord channel](https://discord.gg/3rGH87uZTk). Thank you for your understanding!
 
 ## Install
 

@@ -82,7 +82,7 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         StaticMatrix uses power-of-2 padding for SIMD alignment, so it is
         only C-contiguous when ncols equals the padded buffer column length.
         """
-        return self.col_stride == 1 and self.row_stride == self.ncols
+        return self.row_stride == self.ncols
 
     fn is_f_contiguous(self) -> Bool:
         """Returns True if the matrix is F-contiguous (column-major, dense).
@@ -91,6 +91,21 @@ struct StaticMatrix[dtype: DType, nrows: Int, ncols: Int](
         F-contiguous (unless it is a single row or column).
         """
         return self.row_stride == 1 and self.col_stride == self.nrows
+
+    fn is_row_contiguous(self) -> Bool:
+        """Returns True if elements within each row are contiguous.
+
+        StaticMatrix always has col_stride=1, so rows are always contiguous.
+        """
+        return True
+
+    fn is_col_contiguous(self) -> Bool:
+        """Returns True if elements within each column are contiguous.
+
+        StaticMatrix has row_stride = BUFFER_COL_LEN (power-of-2 padded),
+        which equals 1 only when ncols <= 1.
+        """
+        return Self.row_stride == 1
 
     # ===--------------------------------------------------------------------===#
     # Life Cycle Management

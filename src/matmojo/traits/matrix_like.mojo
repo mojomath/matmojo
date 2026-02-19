@@ -46,6 +46,24 @@ trait MatrixLike(Copyable):
         """
         ...
 
+    fn is_row_contiguous(self) -> Bool:
+        """Returns True if elements within each row are contiguous in memory.
+
+        This requires `col_stride == 1`. Unlike `is_c_contiguous()`, this
+        allows padding between rows (row_stride >= ncols).  Many SIMD kernels
+        (e.g. matmul) only need this weaker guarantee.
+        """
+        ...
+
+    fn is_col_contiguous(self) -> Bool:
+        """Returns True if elements within each column are contiguous in memory.
+
+        This requires `row_stride == 1`. Unlike `is_f_contiguous()`, this
+        allows padding between columns (col_stride >= nrows).  Many SIMD kernels
+        only need this weaker guarantee.
+        """
+        ...
+
     fn copy(self) -> Self:
         """Returns a copy of the matrix-like object."""
         ...

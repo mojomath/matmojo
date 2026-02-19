@@ -77,6 +77,20 @@ struct MatrixView[mut: Bool, //, dtype: DType, origin: Origin[mut=mut]](
         """Returns True if the view is F-contiguous (column-major, dense)."""
         return self.row_stride == 1 and self.col_stride == self.nrows
 
+    fn is_row_contiguous(self) -> Bool:
+        """Returns True if elements within each row are contiguous (col_stride == 1).
+
+        Allows padding between rows (row_stride >= ncols).
+        """
+        return self.col_stride == 1
+
+    fn is_col_contiguous(self) -> Bool:
+        """Returns True if elements within each column are contiguous (row_stride == 1).
+
+        Allows padding between columns (col_stride >= nrows).
+        """
+        return self.row_stride == 1
+
     # ===--------------------------------------------------------------------===#
     # Life Cycle Management
     # ===--------------------------------------------------------------------===#
