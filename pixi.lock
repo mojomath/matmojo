@@ -17,8 +17,6 @@ environments:
     - url: https://conda.modular.com/max/
     - url: https://repo.prefix.dev/modular-community/
     - url: https://conda.anaconda.org/conda-forge/
-    indexes:
-    - https://pypi.org/simple
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -105,7 +103,7 @@ environments:
       - conda: https://conda.modular.com/max/linux-64/mojo-compiler-1.0.0-release.conda
       - conda: https://conda.modular.com/max/noarch/mblack-26.5.0-release.conda
       - conda: https://conda.modular.com/max/noarch/mojo-python-1.0.0-release.conda
-      - pypi: https://files.pythonhosted.org/packages/fe/79/a78ace23655d2ae7b4fce4a4c5c7529e37cb5e3d59af4cf07c7387c694bc/rumdl-0.2.55-py3-none-manylinux_2_28_x86_64.whl
+      - conda: https://repo.prefix.dev/modular-community/linux-64/decimo-0.13.0-hb0f4dca_0.conda
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/_python_abi3_support-1.0-hd8ed1ab_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/ca-certificates-2026.7.22-hbd8a1cb_0.conda
@@ -188,7 +186,7 @@ environments:
       - conda: https://conda.modular.com/max/osx-arm64/max-core-26.5.0-release.conda
       - conda: https://conda.modular.com/max/osx-arm64/mojo-1.0.0-release.conda
       - conda: https://conda.modular.com/max/osx-arm64/mojo-compiler-1.0.0-release.conda
-      - pypi: https://files.pythonhosted.org/packages/34/63/635d3ee438095e0a05f2f718dd8f18f98ee0e696f883a1511872c56f36aa/rumdl-0.2.55-py3-none-macosx_11_0_arm64.whl
+      - conda: https://repo.prefix.dev/modular-community/osx-arm64/decimo-0.13.0-h60d57d3_0.conda
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -2031,13 +2029,21 @@ packages:
   run_exports: {}
   size: 61221085
   timestamp: 1786294690001
-- pypi: https://files.pythonhosted.org/packages/34/63/635d3ee438095e0a05f2f718dd8f18f98ee0e696f883a1511872c56f36aa/rumdl-0.2.55-py3-none-macosx_11_0_arm64.whl
-  name: rumdl
-  version: 0.2.55
-  sha256: 0454838fa02c9bd65336e39e54b98cf3d8e0e06e46090a01fa6690da7f9548d5
-  requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/fe/79/a78ace23655d2ae7b4fce4a4c5c7529e37cb5e3d59af4cf07c7387c694bc/rumdl-0.2.55-py3-none-manylinux_2_28_x86_64.whl
-  name: rumdl
-  version: 0.2.55
-  sha256: 728d31674bdf3c898a2d42ca8d52144b1d2f9c6a40570c412600982cdedd3548
-  requires_python: '>=3.9'
+- conda: https://repo.prefix.dev/modular-community/linux-64/decimo-0.13.0-hb0f4dca_0.conda
+  sha256: 9a1529878c889f7f3ecc669f45bbdd9129f5aaa698e4c50aca5f73f4bae65c37
+  md5: e833fd30f0816ae941538549fb68d91d
+  depends:
+  - mojo-compiler >=1.0.0,<1.1.0
+  license: Apache-2.0
+  run_exports: {}
+  size: 1427805
+  timestamp: 1788226739952
+- conda: https://repo.prefix.dev/modular-community/osx-arm64/decimo-0.13.0-h60d57d3_0.conda
+  sha256: ee38f33e539e2792654a145df58aa7188289de77b27330d0c4c289f6727e2366
+  md5: 929af9c83f92a6682bbf3c3a868d9cd4
+  depends:
+  - mojo-compiler >=1.0.0,<1.1.0
+  license: Apache-2.0
+  run_exports: {}
+  size: 1427317
+  timestamp: 1788227134819

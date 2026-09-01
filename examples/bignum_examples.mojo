@@ -19,7 +19,6 @@ pixi run examples
 """
 
 import linamo as la
-from linamo import BInt, Decimal
 
 
 def _banner(title: String):
@@ -35,20 +34,20 @@ def main() raises:
     # The element type is written where `Float64` would go, and nothing else
     # about the call changes -- integer literals convert to `BInt` in the
     # nested list just as they would to a scalar.
-    var a = la.matrix[BInt]([[1, 2], [3, 4]])
+    var a = la.matrix[la.BInt]([[1, 2], [3, 4]])
     print("a =\n", a)
     print("a @ a =\n", a @ a)
-    print("a * 3 =\n", a * BInt(3))
+    print("a * 3 =\n", a * la.BInt(3))
     print("trace(a) =", la.trace(a))
 
     _banner("WHY: A VALUE NO DType CAN HOLD")
 
     # 60! is about 8.3e81. `UInt64` stops at 1.8e19 and `Float64` would have
     # kept 53 bits of it; a `BInt` keeps every digit.
-    var factorial = BInt.one()
+    var factorial = la.BInt.one()
     for k in range(1, 61):
-        factorial = factorial * BInt(k)
-    var big = la.diag([factorial.copy(), BInt(1)])
+        factorial = factorial * la.BInt(k)
+    var big = la.diag([factorial.copy(), la.BInt(1)])
     print("diag(60!, 1) =\n", big)
     print("its trace    =", la.trace(big))
 
@@ -57,7 +56,7 @@ def main() raises:
     # None of the following touches the elements' arithmetic. These routines
     # move or compare elements, so they were generic over the element type
     # before `Numeric` existed and stay that way.
-    var m = la.matrix[BInt]([[30, 10, 20], [3, 1, 2]])
+    var m = la.matrix[la.BInt]([[30, 10, 20], [3, 1, 2]])
     print("m =\n", m)
     print("m.transpose() =\n", m.transpose())
     print("m[0:1, :] (a view, nothing copied) =\n", m[0:1, :])
@@ -69,10 +68,10 @@ def main() raises:
 
     # The same operators, over a type that keeps decimal fractions exactly --
     # 0.1 + 0.2 is 0.3 here, which it is not in binary floating point.
-    var prices = la.matrix[Decimal](
+    var prices = la.matrix[la.Decimal](
         [
-            [Decimal("0.1"), Decimal("0.2")],
-            [Decimal("1.05"), Decimal("2.10")],
+            [la.Decimal("0.1"), la.Decimal("0.2")],
+            [la.Decimal("1.05"), la.Decimal("2.10")],
         ]
     )
     print("prices =\n", prices)
@@ -84,7 +83,7 @@ def main() raises:
 
     # `lu`, `det`, `solve` and `inv` reach a decimal element through the same
     # names a `Float64` matrix uses, and `A ** -1` goes through `inv`.
-    var m2 = la.from_string[Decimal]("[[4, 7], [2, 6]]")
+    var m2 = la.from_string[la.Decimal]("[[4, 7], [2, 6]]")
     print("m2 =\n", m2)
     print("det(m2) =", la.det(m2))
     print("inv(m2) =\n", la.inv(m2))

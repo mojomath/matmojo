@@ -94,10 +94,12 @@ pixi run test
 pixi run mojo run -I src -I temp my_program.mojo
 ```
 
-`temp/` is where `pixi run decimo` leaves `decimo.mojoc`, and every pixi task
-depends on that step. See [Install](../README.md#install) for the `.mojoc`
-route, which precompiles Linamo itself rather than recompiling the source on
-every build.
+Decimo is an ordinary workspace dependency, so `pixi install` puts it on the
+import path and `temp/` is normally empty; it is where `pixi run decimo` leaves
+a `decimo.mojoc` when you point it at a local or unreleased checkout, which is
+why `-I temp` is on the line. See [Install](../README.md#install) for the
+`.mojoc` route, which precompiles Linamo itself rather than recompiling the
+source on every build.
 
 One import gets you the library:
 
@@ -1585,22 +1587,21 @@ names, and Linamo re-exports the element types so that using them costs no
 second import.
 
 ```mojo
-import linamo as la
-from linamo import BInt
+import linamo as la         # `la.BInt` and the rest come with this line
 
-var a = la.matrix[BInt]([[1, 2], [3, 4]])
+var a = la.matrix[la.BInt]([[1, 2], [3, 4]])
 
 a + a               # element-wise, as for any other element type
 a @ a               # matrix multiplication, and `a * a` is the same call
 a**2                # repeated multiplication; `a**-1` inverts, see below
 a.mul(a)            # element-wise, the Hadamard product
-a * BInt(3)         # a value on either side of the operator
+a * la.BInt(3)      # a value on either side of the operator
 a.transpose()       # only moves elements
 la.sort(a, 1)       # only compares them
 la.trace(a)         # the diagonal sum
-la.eye[BInt](3)     # asks `Numeric` for a zero and a one
+la.eye[la.BInt](3)  # asks `Numeric` for a zero and a one
 
-la.from_string[BInt]("[[1, 2], [3, 4]]")   # asks `Parsable` to read the text
+la.from_string[la.BInt]("[[1, 2], [3, 4]]")  # asks `Parsable` to read it
 ```
 
 Elimination is there too — `lu`, `det`, `solve`, `inv`, and `a**-1` through
@@ -1608,14 +1609,13 @@ them — but it wants a *decimal* element:
 
 ```mojo
 import linamo as la
-from linamo import Dec128
 
-var m = la.from_string[Dec128]("[[4, 7], [2, 6]]")
+var m = la.from_string[la.Dec128]("[[4, 7], [2, 6]]")
 
 la.det(m)                # 10
 la.inv(m)                # 0.6 -0.7 / -0.2 0.4, exactly
 m ** -1                  # the same matrix, through `matrix_power`
-la.solve(m, la.from_string[Dec128]("[[1], [1]]"))
+la.solve(m, la.from_string[la.Dec128]("[[1], [1]]"))
 ```
 
 These four divide, so they mean whatever `/` means on the element type.
@@ -1675,12 +1675,17 @@ that `BigInt` is `Numeric`. Since Linamo's matrix types name that trait, and
 Mojo has no conditional imports, Decimo has to be on the include path to
 compile any part of Linamo:
 
+`pixi add linamo` brings Decimo in as a dependency, and inside a checkout
+`pixi install` does the same, so this is normally automatic. The task that
+resolves it is:
+
 ```bash
-pixi run decimo    # build the decimo package into temp/
+pixi run decimo    # find decimo, or build it into temp/
 ```
 
 `pixi run test`, `pixi run examples` and `pixi run pack` depend on that task,
-so running them is enough.
+so running them is enough. Set `DECIMO_PATH=/path/to/decimo` to build against
+a local checkout instead --- the way to develop the two libraries together.
 
 ## StaticMatrix
 

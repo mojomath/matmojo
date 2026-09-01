@@ -933,8 +933,6 @@ call site keeps it.
 |            | All tests pass, zero warnings.                                |
 | 2026-08-15 | Phase 5.1 done: mutable views via `ref self`, axis iterators, |
 |            | SIMD load/store, region assignment. 17 new tests.             |
-| 2026-08-15 | Renamed the package from MatMojo to Linamo; import alias      |
-|            | `mm` -> `la`.                                                 |
 | 2026-08-15 | Phase 5.2 done: in-place, floordiv/mod/pow, reflected and     |
 |            | comparison operators; new `routines/logic.mojo`. 35 new       |
 |            | tests (266 total).                                            |

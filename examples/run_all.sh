@@ -3,10 +3,10 @@
 # a failure here means a user-visible break even when the test suite is green.
 set -e
 
-# `temp/` holds the precompiled decimo package (tools/ensure_decimo.sh).
-# Linamo does not compile without it.
+# `tools/ensure_decimo.sh` has to have run: Linamo does not compile without
+# decimo. It is normally taken from the pixi environment, leaving `temp/` empty.
 if [[ ! -d temp ]]; then
-    echo "decimo is missing. Run 'pixi run decimo' first." >&2
+    echo "decimo has not been resolved. Run 'pixi run decimo' first." >&2
     exit 1
 fi
 INCLUDES=(-I src -I temp)

@@ -45,12 +45,12 @@ jobs:
           pixi install
 
       # Linamo does not compile without decimo on the include path: the
-      # matrix types name `decimo.Numeric`. With no conda build carrying the
-      # trait yet, this falls through to the commit pinned in the script and
-      # precompiles it with this workspace's own `mojo`.
+      # matrix types name `decimo.Numeric`. `pixi install` above brings in the
+      # conda package, and this step is what asserts it is really there --- it
+      # fails loudly rather than letting the build report a missing module.
       - name: Provision decimo
         run: |
-          pixi run decimo
+          LINAMO_DECIMO=conda pixi run decimo
 
       - name: Run tests
         run: |

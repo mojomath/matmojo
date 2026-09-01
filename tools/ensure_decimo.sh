@@ -14,10 +14,13 @@
 #   1. `DECIMO_PATH=/path/to/decimo` --- a working copy, for developing the two
 #      libraries together. This is the path to use while a decimo change is
 #      still uncommitted.
-#   2. The conda package `decimo` from the modular-community channel, once it
-#      ships a build carrying `decimo.Numeric`, `decimo.Parsable` and
-#      `decimo.errors`.
-#   3. The upstream git repository, pinned at $DECIMO_COMMIT.
+#   2. The conda package `decimo` from the modular-community channel. This is
+#      the normal source: `decimo >=0.13.0` is a workspace dependency, and
+#      v0.13.0 is the release that carries `decimo.Numeric`, `decimo.Parsable`
+#      and `decimo.errors`.
+#   3. The upstream git repository, pinned at $DECIMO_COMMIT. Only reached when
+#      the environment has no decimo --- a checkout built before the dependency
+#      was added, or a deliberate `LINAMO_DECIMO=git`.
 #
 # The package is always *precompiled with this workspace's own `mojo`*. A
 # `.mojoc` built by another environment's compiler is not loadable here: it
@@ -38,11 +41,10 @@
 set -euo pipefail
 
 DECIMO_REPO="${DECIMO_REPO:-https://github.com/forfudan/decimo.git}"
-# The commit that carries `decimo.Numeric`, `decimo.Parsable` and the error
-# kinds in `decimo.errors`. Update this when decimo releases and the conda
-# package carries all three, at which point source 2 takes over and this is
-# only the fallback.
-DECIMO_COMMIT="${DECIMO_COMMIT:-2e561618fb675de3fdfe624b934f2f2d5e4eda41}"
+# The v0.13.0 tag --- the same code as the conda package, so the fallback and
+# the normal source agree. Keep this in step with the `decimo` lower bound in
+# pixi.toml.
+DECIMO_COMMIT="${DECIMO_COMMIT:-a92426eb670b7ebee57c63223044e5b0e5c5932f}"
 MODE="${LINAMO_DECIMO:-auto}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
